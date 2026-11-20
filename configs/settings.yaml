@@ -1,0 +1,47 @@
+# The compressed versions of each model. Every setting names a `family` (used for the
+# equal-accuracy-loss comparison) and a `severity` (monotone within its family).
+# Weight-space compression is simulated: compressed values are written back into
+# ordinary fp16 weights (see crs.compress.apply). KV-cache settings need the HF backend.
+#
+# Layers compressed: every nn.Linear inside the decoder blocks (q/k/v/o, gate/up/down).
+# Embeddings and lm_head are left in full precision, as is standard.
+settings:
+  - {name: base,          family: none,   severity: 0, backend: vllm}
+
+  # Weight quantization (round-to-nearest, asymmetric min-max)
+  - {name: rtn-w4-g128,   family: wquant-g128, severity: 1, backend: vllm, weight: {method: rtn, bits: 4, group_size: 128}}
+  - {name: rtn-w3-g128,   family: wquant-g128, severity: 2, backend: vllm, weight: {method: rtn, bits: 3, group_size: 128}}
+  - {name: rtn-w4-pc,     family: wquant-pc,   severity: 1, backend: vllm, weight: {method: rtn, bits: 4, group_size: -1}}
+  - {name: rtn-w3-pc,     family: wquant-pc,   severity: 2, backend: vllm, weight: {method: rtn, bits: 3, group_size: -1}}
+
+  # Unstructured pruning (Wanda: |W| * ||X||, per output row)
+  - {name: wanda-10,      family: wanda, severity: 0.1, backend: vllm, weight: {method: wanda, sparsity: 0.1}}
+  - {name: wanda-20,      family: wanda, severity: 0.2, backend: vllm, weight: {method: wanda, sparsity: 0.2}}
+  - {name: wanda-30,      family: wanda, severity: 0.3, backend: vllm, weight: {method: wanda, sparsity: 0.3}}
+  - {name: wanda-40,      family: wanda, severity: 0.4, backend: vllm, weight: {method: wanda, sparsity: 0.4}}
+  - {name: wanda-50,      family: wanda, severity: 0.5, backend: vllm, weight: {method: wanda, sparsity: 0.5}}
+  # Magnitude pruning at one level, as a calibration-free pruning control
+  - {name: mag-30,        family: magnitude, severity: 0.3, backend: vllm, weight: {method: magnitude, sparsity: 0.3}}
+
+  # Low-rank truncation (plain SVD, keep a fraction of each matrix's full rank)
+  - {name: svd-r90,       family: lowrank, severity: 0.10, backend: vllm, weight: {method: svd, rank_frac: 0.90}}
+  - {name: svd-r80,       family: lowrank, severity: 0.20, backend: vllm, weight: {method: svd, rank_frac: 0.80}}
+  - {name: svd-r70,       family: lowrank, severity: 0.30, backend: vllm, weight: {method: svd, rank_frac: 0.70}}
+
+  # KV-cache quantization (fake-quant, per-token groups along head_dim). HF backend.
+  - {name: kv-int8,       family: kvquant, severity: 1, backend: hf, kv: {bits: 8, group_size: 64}}
+  - {name: kv-int4,       family: kvquant, severity: 2, backend: hf, kv: {bits: 4, group_size: 64}}
+  - {name: kv-int2,       family: kvquant, severity: 3, backend: hf, kv: {bits: 2, group_size: 64}}
+
+  # Combined setting
+  - {name: combo-w4-kv4,  family: combo, severity: 1, backend: hf, weight: {method: rtn, bits: 4, group_size: 128}, kv: {bits: 4, group_size: 64}}
+
+  # Control (not one of the 18): uncompressed model on the HF backend, the paired
+  # reference for the KV-cache settings so backend numerics don't masquerade as an effect.
+  - {name: base-hf,       family: none-hf, severity: 0, backend: hf}
+
+# Wanda calibration data
+calibration:
+  source: baseline_chains     # baseline_chains | wikitext
+  n_samples: 128
+  seq_len: 2048

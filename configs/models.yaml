@@ -1,0 +1,42 @@
+# Models under study. `dtype` is the precision used for generation; T4 GPUs have no
+# bf16, so float16 is the default. If the smoke test shows NaN/inf logits for a model,
+# switch that model to float32 (both 1.5B/1.7B fit on a 16 GB T4 in fp32).
+models:
+  r1-1.5b:
+    hf_id: deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B
+    family: r1-distill
+    dtype: float16
+    think_end: "</think>"
+    chat_template_kwargs: {}
+    sampling: {temperature: 0.6, top_p: 0.95, top_k: -1}
+    hf_batch_size: 24       # HF backend (KV settings); 2 KV heads -> small cache
+
+  qwen3-1.7b:
+    hf_id: Qwen/Qwen3-1.7B
+    family: qwen3-thinking
+    dtype: float16
+    think_end: "</think>"
+    chat_template_kwargs: {enable_thinking: true}
+    sampling: {temperature: 0.6, top_p: 0.95, top_k: 20}
+    hf_batch_size: 8        # 8 KV heads -> 4x the cache per sequence
+
+  # Local CPU tests only: a tiny randomly initialised Qwen2 model is built on the fly
+  # (see tests/conftest.py) and paired with the R1-distill tokenizer.
+  tiny:
+    hf_id: null
+    tokenizer_id: deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B
+    family: test
+    dtype: float32
+    think_end: "</think>"
+    chat_template_kwargs: {}
+    sampling: {temperature: 1.0, top_p: 1.0, top_k: -1}
+    hf_batch_size: 4
+
+# Instruction appended to every problem (DeepSeek-R1 recommended math prompt).
+prompt_suffix: "\nPlease reason step by step, and put your final answer within \\boxed{}."
+
+generation:
+  max_tokens: 8192          # total new tokens (thinking + answer)
+  logprobs_k: 20            # top-k logprobs kept per token for the entropy estimate
+  seed: 1234
+  chunk_size: 64            # problems per write-out chunk (resumability granularity)

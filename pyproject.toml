@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "crs"
+version = "0.1.0"
+description = "Cross-compression study of the commitment failure in small reasoning models (ATML Group 20)"
+requires-python = ">=3.10"
+dependencies = [
+  "torch",
+  "transformers>=4.46",
+  "numpy",
+  "scipy",
+  "pandas",
+  "pyyaml",
+  "safetensors",
+  "datasets",
+  "math-verify[antlr4_13_2]",
+  "statsmodels",
+  "matplotlib",
+  "accelerate",
+  "tabulate",
+]
+
+[project.optional-dependencies]
+gpu = ["vllm"]
+dev = ["pytest"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+crs = ["wordlists/*.txt"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

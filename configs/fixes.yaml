@@ -1,0 +1,17 @@
+# Training-free fixes applied while decoding.
+#   logit_bias       : subtract `alpha` from the logits of every single-token variant of the
+#                      words in the list (vLLM SamplingParams.logit_bias), for the whole output.
+#   entropy_adaptive : penalty alpha_max * sigmoid((H - h0) / tau), where H is the entropy
+#                      (nats) of the current next-token distribution; only before </think>.
+#   budget           : no new generation; derived from the `none` run by truncating the
+#                      thinking at `max_think` tokens and forcing an answer (crs.run budget).
+fixes:
+  none: {type: none}
+  pen-hand:    {type: logit_bias, wordlist: handwritten, alpha: 3.0}
+  pen-mined:   {type: logit_bias, wordlist: mined,       alpha: 3.0}
+  pen-random:  {type: logit_bias, wordlist: random,      alpha: 3.0}
+  pen-entropy: {type: entropy_adaptive, wordlist: handwritten, alpha_max: 6.0, h0: 1.5, tau: 0.5}
+  budget-4096: {type: budget, max_think: 4096}
+
+# Budgets evaluated by truncating the full-length chains (RQ6 and the budget fix).
+budgets: [512, 1024, 2048, 4096]

@@ -1,0 +1,30 @@
+# Fixed priority order over jobs. If compute runs short, jobs are run top to bottom so
+# the main test (baseline vs every compression family, no fix) finishes first.
+# A job = (models x settings x fix), with `samples` > 1 for the voting runs.
+# Expand with: python -m crs.run jobs --priority configs/priority.yaml
+groups:
+  - name: P1-main-test
+    models: [r1-1.5b, qwen3-1.7b]
+    settings: [base, rtn-w4-g128, rtn-w3-g128, wanda-30, wanda-50, svd-r80, kv-int4, base-hf]
+    fix: none
+
+  - name: P2-severity-curves
+    models: [r1-1.5b, qwen3-1.7b]
+    settings: [wanda-10, wanda-20, wanda-40, svd-r90, svd-r70, kv-int8, kv-int2, rtn-w4-pc, rtn-w3-pc, mag-30, combo-w4-kv4]
+    fix: none
+
+  - name: P3-fix-hand
+    models: [r1-1.5b, qwen3-1.7b]
+    settings: [base, rtn-w3-g128, wanda-50, svd-r80, kv-int4]
+    fix: pen-hand
+
+  - name: P4-fix-controls
+    models: [r1-1.5b]
+    settings: [base, rtn-w3-g128, wanda-50, svd-r80, kv-int4]
+    fixes: [pen-random, pen-mined, pen-entropy]
+
+  - name: P5-voting
+    models: [r1-1.5b]
+    settings: [base, rtn-w3-g128, wanda-30, kv-int4]
+    fix: none
+    samples: 4

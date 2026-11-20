@@ -1,0 +1,9 @@
+# Kaggle smoke run: checks numerics, output writing/resume and throughput before the
+# real runs. 10 problems, 1,024 new tokens.
+limit: 10
+max_tokens: 1024
+groups:
+  - name: smoke
+    models: [r1-1.5b, qwen3-1.7b]
+    settings: [base, rtn-w4-g128, wanda-30, kv-int4]
+    fixes: [none, pen-hand]

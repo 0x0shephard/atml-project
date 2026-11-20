@@ -1,0 +1,55 @@
+# Hand-written hesitation / self-correction words (one per line, '#' starts a comment).
+# Every single-token surface variant ("Wait", " Wait", ...) of each word is penalised; words
+# with no single-token variant are skipped and reported. Review before the main runs:
+# the list should mirror the ~50-word list of Lotfi et al. as closely as their paper allows.
+Wait
+But
+Hmm
+Hmmm
+However
+Alternatively
+Actually
+Hold
+Oh
+Oops
+Ah
+Uh
+Um
+Huh
+Whoa
+Well
+No
+Nope
+Nah
+Although
+Though
+Yet
+Still
+Maybe
+Perhaps
+Possibly
+Probably
+Unless
+Otherwise
+Instead
+Rather
+Again
+Recheck
+Rechecking
+Reconsider
+Reconsidering
+Double
+Verify
+Verifying
+Mistake
+Wrong
+Incorrect
+Confused
+Confusing
+Contradiction
+Unclear
+Unsure
+Doubt
+Or
+Earlier
+Previously
