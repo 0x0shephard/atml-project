@@ -13,6 +13,7 @@ import glob
 import json
 import os
 import shutil
+import signal
 import subprocess
 import sys
 import time
@@ -110,6 +111,13 @@ def main() -> None:
                 proc.wait()
                 job = {**job, "timed_out": True}
             if proc.poll() is not None:
+                # vLLM runs its engine in a child process that outlives a killed parent and keeps
+                # holding GPU memory; in the 2026-11-21 bench run that made the next jobs on the
+                # GPU fail. Each job gets its own process group, so clear the whole group.
+                try:
+                    os.killpg(proc.pid, signal.SIGKILL)
+                except (ProcessLookupError, PermissionError):
+                    pass
                 status.append({**job, "returncode": proc.returncode})
                 shutil.rmtree(ck, ignore_errors=True)
                 del running[gpu]
@@ -131,7 +139,8 @@ def main() -> None:
             log = open(f"{LOGS}/{name}.log", "a")
             print(f"[{hours:.2f} h] GPU{gpu}: {name}", flush=True)
             running[gpu] = (subprocess.Popen(cmd, cwd=code, env={**env, "CUDA_VISIBLE_DEVICES": str(gpu)},
-                                             stdout=log, stderr=subprocess.STDOUT), job, ck, time.time())
+                                             stdout=log, stderr=subprocess.STDOUT, start_new_session=True),
+                            job, ck, time.time())
         if not running and (not queue or hours > TIME_BUDGET_H):
             break
         time.sleep(20)

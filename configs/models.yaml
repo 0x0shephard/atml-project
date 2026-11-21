@@ -40,4 +40,5 @@ generation:
   logprobs_k: 20            # top-k logprobs kept per token for the entropy estimate
   seed: 1234
   chunk_size: 64            # problems per write-out chunk (resumability granularity)
-  vllm_attention_backend: auto  # auto = vLLM's choice (FlexAttention on T4); set from the speed benchmark
+  vllm_attention_backend: TRITON_ATTN  # 2026-11-21 bench on T4: the only one that works. FlexAttention (vLLM's
+                                      # default) runs out of memory mid-run; xFormers has no T4 kernel.
