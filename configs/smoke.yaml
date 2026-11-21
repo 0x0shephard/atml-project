@@ -7,3 +7,9 @@ groups:
     models: [r1-1.5b, qwen3-1.7b]
     settings: [base, rtn-w4-g128, wanda-30, kv-int4]
     fixes: [none, pen-hand]
+  # backend and KV-precision controls: base-hf vs base checks the two backends agree;
+  # base-hf vs kv-int8 vs kv-int4 shows how much of any damage is the KV quantization
+  - name: smoke-diag
+    models: [r1-1.5b, qwen3-1.7b]
+    settings: [base-hf, kv-int8]
+    fixes: [none]

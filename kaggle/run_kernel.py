@@ -21,6 +21,8 @@ JOB_FILE = "priority.yaml"  # set by push.sh
 GROUPS: list = []  # set by push.sh; empty = all groups
 TIME_BUDGET_H = 11.0  # Kaggle sessions stop at 12 h
 VLLM_SPEC = "vllm==0.11.0"  # needs AdapterLogitsProcessor (>= 0.11); T4 works in float16
+# vLLM 0.11 breaks on transformers 5 (Kaggle's default image): tokenizers lost all_special_tokens_extended
+TRANSFORMERS_SPEC = "transformers>=4.56,<5"
 
 T0 = time.time()
 WORK = "/kaggle/working"
@@ -59,7 +61,7 @@ def main() -> None:
     code = "/tmp/crs-code"  # outside /kaggle/working, so the code is not part of the output
     shutil.copytree(code_src, code, dirs_exist_ok=True)
     unpack_dirs(code, ["src", "configs", "data"])
-    sh(f"pip install -q '{VLLM_SPEC}' 'math-verify[antlr4_13_2]' statsmodels tabulate")
+    sh(f"pip install -q '{VLLM_SPEC}' '{TRANSFORMERS_SPEC}' 'math-verify[antlr4_13_2]' statsmodels tabulate")
     sh(f"pip install -q --no-deps -e {code}")
 
     import torch
