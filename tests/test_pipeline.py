@@ -1,5 +1,6 @@
 """End-to-end on CPU: tiny random model via the HF backend, 3 problems."""
 
+import pytest
 import numpy as np
 import torch
 
@@ -40,6 +41,10 @@ def test_end_to_end(tmp_path, tok, problems_file):
     # resume: nothing left to do
     generate_run("tiny", "base", "none", limit=3, max_tokens=24, results=results, backend=be, problems_file=problems_file)
     assert len(list(iter_records(rd))) == 3
+    # resuming with another length limit would mix chains generated under different rules
+    with pytest.raises(ValueError, match="max_tokens"):
+        generate_run("tiny", "base", "none", limit=4, max_tokens=48, results=results, backend=be,
+                     problems_file=problems_file)
 
     # penalised run and a compressed version (compressed in memory)
     generate_run("tiny", "base", "pen-hand", limit=3, max_tokens=24, results=results, backend=be,

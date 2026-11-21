@@ -128,6 +128,14 @@ def generate_run(model_key: str, setting: str, fix: str, samples: int = 1, limit
     problems = problems[shard[0]::shard[1]]
     rd = run_dir(results, model_key, setting, fix, samples)
     writer = RunWriter(rd)
+    meta_file = rd / "meta.json"
+    if meta_file.exists():
+        # resume skips finished problems, so never mix chains generated with a different length limit
+        # (e.g. 1,024-token smoke results inside an 8,192-token main run)
+        old = {s.get("max_tokens") for s in json.loads(meta_file.read_text()).get("sessions", [])}
+        if old - {max_tokens}:
+            raise ValueError(f"{rd} holds results generated with max_tokens={sorted(old)}, not {max_tokens}; "
+                             "move them aside before resuming")
     done = writer.done()
     todo = [p for p in problems if done.get(p["id"], 0) < samples]
     log.info("%s: %d/%d problems to do", rd, len(todo), len(problems))
