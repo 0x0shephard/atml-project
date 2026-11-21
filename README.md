@@ -60,15 +60,17 @@ The last command writes `data/problems.jsonl`. It only needs to run once; commit
 
 ## Kaggle
 
-1. Install the CLI with `pip install kaggle`. Create an API token at kaggle.com → Settings →
-   API and put it in `~/.kaggle/`. Your account must be phone-verified so notebooks can use
-   Internet and GPUs.
+1. Install the CLI with `uv tool install kaggle --with six` (Kaggle CLI 2.2.x; it is missing the
+   `six` dependency), then sign in once with `kaggle auth login`. `kaggle quota` shows the GPU
+   hours left. Sign-in tokens last about 3 hours, and the CLI only refreshes them about
+   30 minutes after they expire. Calls in that window fail with "Authentication required", so
+   wait or run `kaggle auth login --force`.
 2. Run the smoke test (10 problems × 4 settings × 2 fixes, 1,024 tokens):
    ```bash
    kaggle/push.sh <your-kaggle-username> smoke.yaml
    ```
-   In the notebook settings on kaggle.com, check that the accelerator is **GPU T4 x2**.
-   P100 is too old for vLLM, and the kernel stops with a message if it gets one.
+   The kernel asks for **GPU T4 x2** (`machine_shape` in `kernel-metadata.json.tmpl`). It stops
+   with a message if it gets an older GPU. Follow it with `kaggle kernels logs -f <user>/crs-run`.
 3. When it finishes, pull the outputs:
    ```bash
    kaggle/pull.sh <your-kaggle-username>

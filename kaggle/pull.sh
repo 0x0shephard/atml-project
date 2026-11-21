@@ -8,7 +8,8 @@ ROOT=$(cd "$(dirname "$0")/.." && pwd)
 OUT="$ROOT/build/kaggle_output"
 rm -rf "$OUT" && mkdir -p "$OUT"
 kaggle kernels status "$KUSER/crs-run"
-kaggle kernels output "$KUSER/crs-run" -p "$OUT"
+# only our outputs: an unfiltered pull fetches every runtime file and can hit a long 429
+kaggle kernels output "$KUSER/crs-run" -p "$OUT" --file-pattern '^(results/|logs/|status\.json)'
 mkdir -p "$ROOT/results"
 # kernel output = restored results + new chunks, so it supersedes the local copy
 rsync -a "$OUT/results/" "$ROOT/results/"

@@ -34,8 +34,21 @@ def sh(cmd: str, **kw) -> int:  # noqa: ANN003
 
 
 def find_input(marker: str) -> str | None:
-    hits = glob.glob(f"/kaggle/input/*/{marker}") + glob.glob(f"/kaggle/input/*/*/{marker}")
+    """Directory holding `marker` under /kaggle/input. Datasets mount at
+    /kaggle/input/datasets/<owner>/<slug>/ (older images: /kaggle/input/<slug>/), so search any depth."""
+    hits = sorted(glob.glob(f"/kaggle/input/**/{marker}", recursive=True), key=len)
     return os.path.dirname(hits[0]) if hits else None
+
+
+def unpack_dirs(root: str, names: list[str]) -> None:
+    """`--dir-mode zip` uploads folders as <name>.zip; unpack any that Kaggle left zipped."""
+    import zipfile
+
+    for n in names:
+        z = os.path.join(root, f"{n}.zip")
+        if not os.path.isdir(os.path.join(root, n)) and os.path.isfile(z):
+            print(f"unzipping {z}", flush=True)
+            zipfile.ZipFile(z).extractall(os.path.join(root, n))
 
 
 def main() -> None:
@@ -43,8 +56,9 @@ def main() -> None:
     code_src = find_input("pyproject.toml")
     if code_src is None:
         sys.exit("crs-code dataset not attached")
-    code = f"{WORK}/crs-code"
+    code = "/tmp/crs-code"  # outside /kaggle/working, so the code is not part of the output
     shutil.copytree(code_src, code, dirs_exist_ok=True)
+    unpack_dirs(code, ["src", "configs", "data"])
     sh(f"pip install -q '{VLLM_SPEC}' 'math-verify[antlr4_13_2]' statsmodels tabulate")
     sh(f"pip install -q --no-deps -e {code}")
 
@@ -57,10 +71,12 @@ def main() -> None:
         sys.exit(f"GPU compute capability {cc} is too old for vLLM (P100?): set the accelerator to 'GPU T4 x2'")
     n_gpu = torch.cuda.device_count()
 
-    prev = find_input("results/KEEP") or None
+    prev = find_input("crs-results.marker")
     if prev:
-        shutil.copytree(os.path.join(prev, "results") if os.path.isdir(os.path.join(prev, "results")) else prev,
-                        RESULTS, dirs_exist_ok=True)
+        unpack_dirs(prev, ["results"])
+        if os.path.isdir(os.path.join(prev, "results")):
+            shutil.copytree(os.path.join(prev, "results"), RESULTS, dirs_exist_ok=True)
+            print(f"restored earlier results from {prev}", flush=True)
     os.makedirs(RESULTS, exist_ok=True)
 
     spec = json.loads(subprocess.check_output(

@@ -3,7 +3,7 @@
 #
 #   kaggle/push.sh <kaggle-username> [smoke.yaml|priority.yaml] [GROUP ...]
 #
-# Needs the kaggle CLI (`pip install kaggle`) with your own API token in ~/.kaggle/.
+# Needs the kaggle CLI (`uv tool install kaggle --with six`), signed in with `kaggle auth login`.
 set -euo pipefail
 KUSER=${1:?usage: push.sh <kaggle-username> [jobfile] [group ...]}
 JOBS=${2:-priority.yaml}
@@ -31,7 +31,7 @@ dataset "$BUILD/code" crs-code "crs-code"
 
 mkdir -p "$BUILD/results/results"
 [ -d "$ROOT/results" ] && cp -r "$ROOT/results/." "$BUILD/results/results/"
-touch "$BUILD/results/results/KEEP"
+touch "$BUILD/results/results/KEEP" "$BUILD/results/crs-results.marker"
 dataset "$BUILD/results" crs-results "crs-results"
 
 sed -e "s/^JOB_FILE = .*/JOB_FILE = \"$JOBS\"  # set by push.sh/" \
@@ -42,5 +42,6 @@ sed "s/{USER}/$KUSER/g" "$ROOT/kaggle/kernel-metadata.json.tmpl" > "$BUILD/kerne
 echo "waiting 60 s for the datasets to finish processing..."
 sleep 60
 kaggle kernels push -p "$BUILD/kernel"
-echo "pushed. Check the accelerator is 'GPU T4 x2' in the notebook settings; follow with:"
+echo "pushed (GPU T4 x2). Follow with:"
 echo "  kaggle kernels status $KUSER/crs-run"
+echo "  kaggle kernels logs -f $KUSER/crs-run"
