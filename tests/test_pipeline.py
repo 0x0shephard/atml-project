@@ -8,7 +8,7 @@ from crs.backends.base import DecodeSpec
 from crs.backends.hf_backend import HFBackend
 from crs.compress.apply import compress_model
 from crs.record import iter_records, load_arrays
-from crs.run import budget_run, generate_run, score_runs
+from crs.run import budget_run, expand_jobs, generate_run, score_runs
 
 from .conftest import make_tiny
 
@@ -60,10 +60,21 @@ def test_end_to_end(tmp_path, tok, problems_file):
     score_runs(sorted(p for p in results.glob("*/*/*")))
     assert (rd / "scored.jsonl").exists() and (rd / "scored_budget_8.jsonl").exists()
     row = next(iter_records(rd, "scored.jsonl"))
-    assert row["outcome"] in ("correct", "commit_fail", "never_correct")
+    assert row["outcome"] in ("correct", "commit_fail", "never_correct", "truncated")
 
     tables = report(results, tmp_path / "reports")
     assert not tables["vs_baseline"].empty
     assert set(tables["vs_baseline"]["setting"]) >= {"rtn-w3-g128"}
     assert not tables["fix_effects"].empty
     assert (tmp_path / "reports" / "summary.md").exists()
+
+
+def test_bench_jobs_expand():
+    from crs import config
+
+    jobs, extra = expand_jobs(config.CONFIG_DIR / "bench.yaml")
+    bench = [j for j in jobs if j["kind"] == "bench"]
+    assert len(bench) == 12 and {j["attn"] for j in bench} == {"FLEX_ATTENTION", "TRITON_ATTN", "XFORMERS"}
+    assert all(j["timeout_min"] and j["gen_tokens"] for j in bench)
+    assert {j["setting"] for j in jobs if j["kind"] == "gen"} == {"kv-int4", "kv-int8"}
+    assert extra == {"limit": 10, "max_tokens": 1024}

@@ -14,6 +14,7 @@ import json
 from pathlib import Path
 
 from ..record import iter_records, write_records
+from .score import outcome
 
 JUDGE_MODEL = "Qwen/Qwen3-4B"
 WINDOW = 500  # characters each side of the hit
@@ -76,10 +77,7 @@ def judge_runs(runs: list[Path], problems: dict[str, dict], model: str = JUDGE_M
             first = next((hits[j] for j in sorted(v) if v[j]), None)
             row["had_correct_judged"] = first is not None
             row["first_correct_token_judged"] = first["token"] if first else None
-            if not row["correct"]:
-                row["outcome_judged"] = "commit_fail" if first else "never_correct"
-            else:
-                row["outcome_judged"] = "correct"
+            row["outcome_judged"] = outcome(row["correct"], first is not None, row.get("truncated", False))
             row["judge_model"] = model
         write_records(run, rows, "scored.jsonl")
     (Path(runs[0]).parents[2] / "judge_log.json").write_text(json.dumps({"model": model, "n_prompts": len(jobs)}))

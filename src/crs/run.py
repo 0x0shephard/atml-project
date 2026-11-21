@@ -65,7 +65,8 @@ def decode_spec(model_key: str, fix_name: str, tokenizer, max_tokens: int, sampl
 
 
 def open_backend(model_key: str, setting_name: str, max_model_len: int, results: Path, ckpt_dir: Path,
-                 entropy_penalty: bool = False, backend: str | None = None) -> Backend:
+                 entropy_penalty: bool = False, backend: str | None = None,
+                 attention_backend: str | None = None) -> Backend:
     from .compress.apply import build_checkpoint
 
     mcfg = config.models()[model_key]
@@ -81,7 +82,39 @@ def open_backend(model_key: str, setting_name: str, max_model_len: int, results:
         enable_entropy_penalty=entropy_penalty,
         kv=st.kv,
         batch_size=mcfg.hf_batch_size,
+        attention_backend=attention_backend or config.generation_defaults().get("vllm_attention_backend"),
     )
+
+
+def bench_run(model_key: str, attention_backend: str, concurrency: int, gen_tokens: int, results: Path,
+              ckpt_dir: Path = DEFAULT_CKPT) -> dict:
+    """vLLM throughput: `concurrency` problems at once, each generating exactly `gen_tokens`
+    tokens (EOS ignored) with the real sampling and logprob settings. Writes one JSON file."""
+    mcfg = config.models()[model_key]
+    gd = config.generation_defaults()
+    tok = load_tokenizer(mcfg.tokenizer_path)
+    problems = data.load(limit=concurrency)
+    prompts = [prompt_ids(p, mcfg, tok) for p in problems]
+    out = {"model": model_key, "attention_backend": attention_backend, "concurrency": len(prompts),
+           "gen_tokens": gen_tokens}
+    t0 = time.time()
+    be = open_backend(model_key, "base", max(len(p) for p in prompts) + gen_tokens + 16, results, ckpt_dir,
+                      backend="vllm", attention_backend=attention_backend)
+    out["startup_s"] = time.time() - t0
+    spec = decode_spec(model_key, "none", tok, gen_tokens, 1)  # the real sampling and logprob settings
+    spec.ignore_eos = True
+    spec.seeds = [stable_seed(gd["seed"], p["id"]) for p in problems]
+    t1 = time.time()
+    res = be.generate(prompts, spec)
+    dt = time.time() - t1
+    n_tok = sum(len(r[0].token_ids) for r in res)
+    out.update({"gen_s": dt, "tokens": n_tok, "tokens_per_s": n_tok / dt, "per_seq_tokens_per_s": n_tok / dt / len(prompts),
+                "nonfinite": int(sum(not np.isfinite(r[0].logprobs).all() for r in res if r[0].logprobs is not None))})
+    d = results / "bench"
+    d.mkdir(parents=True, exist_ok=True)
+    (d / f"{model_key}__{attention_backend}__c{len(prompts)}.json").write_text(json.dumps(out, indent=1))
+    log.info("bench %s", out)
+    return out
 
 
 def generate_run(model_key: str, setting: str, fix: str, samples: int = 1, limit: int | None = None,
@@ -193,11 +226,20 @@ def expand_jobs(spec_file: str | Path) -> tuple[list[dict[str, Any]], dict[str, 
     spec = config.load_yaml(spec_file)
     jobs = []
     for g in spec["groups"]:
+        if "bench" in g:  # speed benchmark: one job per model x attention backend x concurrency
+            b = g["bench"]
+            for m in g["models"]:
+                for attn in b["attention_backends"]:
+                    for c in b["concurrency"]:
+                        jobs.append({"group": g["name"], "kind": "bench", "model": m, "attn": attn, "concurrency": c,
+                                     "gen_tokens": b["gen_tokens"], "timeout_min": b.get("timeout_min")})
+            continue
         fixes = g.get("fixes") or [g.get("fix", "none")]
         for fix in fixes:
             for m in g["models"]:
                 for s in g["settings"]:
-                    jobs.append({"group": g["name"], "model": m, "setting": s, "fix": fix, "samples": g.get("samples", 1)})
+                    jobs.append({"group": g["name"], "kind": "gen", "model": m, "setting": s, "fix": fix,
+                                 "samples": g.get("samples", 1)})
     extra = {k: spec[k] for k in ("limit", "max_tokens") if k in spec}
     return jobs, extra
 
@@ -253,6 +295,14 @@ def main(argv: list[str] | None = None) -> None:
     m.add_argument("--runs", nargs="*", default=["results/*/*/*"])
     m.add_argument("--csv", type=Path, default=Path("reports/manual_check.csv"))
 
+    be = sub.add_parser("bench", help="vLLM throughput benchmark (GPU)")
+    be.add_argument("--model", required=True, choices=list(config.models()))
+    be.add_argument("--attn", default="auto", help="VLLM_ATTENTION_BACKEND, or auto")
+    be.add_argument("--concurrency", type=int, default=64)
+    be.add_argument("--gen-tokens", type=int, default=1024)
+    be.add_argument("--results", type=Path, default=DEFAULT_RESULTS)
+    be.add_argument("--ckpt-dir", type=Path, default=DEFAULT_CKPT)
+
     jb = sub.add_parser("jobs", help="expand a priority/smoke file into jobs")
     jb.add_argument("--priority", default="priority.yaml")
     jb.add_argument("--json", action="store_true")
@@ -267,6 +317,8 @@ def main(argv: list[str] | None = None) -> None:
         i, n = (int(x) for x in a.shard.split("/"))
         generate_run(a.model, a.setting, a.fix, a.samples, a.limit, a.max_tokens, (i, n), a.results, a.ckpt_dir,
                      backend_kind=a.backend, problems_file=a.problems)
+    elif a.cmd == "bench":
+        bench_run(a.model, a.attn, a.concurrency, a.gen_tokens, a.results, a.ckpt_dir)
     elif a.cmd == "budget":
         budget_run(a.model, a.setting, a.fix, a.samples, a.budgets, a.results, a.ckpt_dir, backend_kind=a.backend,
                    problems_file=a.problems)
@@ -308,7 +360,10 @@ def main(argv: list[str] | None = None) -> None:
             print(json.dumps({"jobs": jobs, **extra}))
         else:
             for jb_ in jobs:
-                print(f"{jb_['group']}\t{jb_['model']}\t{jb_['setting']}\t{jb_['fix']}\t{jb_['samples']}")
+                if jb_["kind"] == "bench":
+                    print(f"{jb_['group']}\t{jb_['model']}\tbench {jb_['attn']}\tc={jb_['concurrency']}")
+                else:
+                    print(f"{jb_['group']}\t{jb_['model']}\t{jb_['setting']}\t{jb_['fix']}\t{jb_['samples']}")
     elif a.cmd == "report":
         from .analysis.report import report
 

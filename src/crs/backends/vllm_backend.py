@@ -24,8 +24,15 @@ class VLLMBackend(Backend):
         gpu_memory_utilization: float = 0.90,
         enable_entropy_penalty: bool = False,
         max_num_seqs: int = 256,
+        attention_backend: str | None = None,
         **_: object,
     ):
+        import os
+
+        # T4 (compute 7.5) has no FlashAttention; vLLM 0.11 then picks FlexAttention, which
+        # cannot use full CUDA graphs. Set e.g. TRITON_ATTN or XFORMERS here (see configs/bench.yaml).
+        if attention_backend and attention_backend != "auto":
+            os.environ["VLLM_ATTENTION_BACKEND"] = attention_backend
         from vllm import LLM
 
         kwargs: dict = {}
@@ -60,6 +67,7 @@ class VLLMBackend(Backend):
             seed=seed,
             logprobs=spec.logprobs_k or None,
             logit_bias=spec.logit_bias or None,
+            ignore_eos=spec.ignore_eos,
             detokenize=False,  # we decode ourselves; saves CPU on 20 logprobs/token
             extra_args=extra or None,
         )

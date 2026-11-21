@@ -43,6 +43,7 @@ def load_scored(results: Path, judged: bool = False) -> pd.DataFrame:
         df["outcome"] = df["outcome_judged"].fillna(df["outcome"])
     df["commit_fail"] = df["outcome"] == "commit_fail"
     df["never_correct"] = df["outcome"] == "never_correct"
+    df["truncated"] = df["outcome"] == "truncated"
     return df
 
 

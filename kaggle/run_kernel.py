@@ -53,6 +53,12 @@ def unpack_dirs(root: str, names: list[str]) -> None:
             zipfile.ZipFile(z).extractall(os.path.join(root, n))
 
 
+def job_name(job: dict) -> str:
+    if job.get("kind") == "bench":
+        return f"bench__{job['model']}__{job['attn']}__c{job['concurrency']}"
+    return f"{job['model']}__{job['setting']}__{job['fix']}__n{job['samples']}"
+
+
 def main() -> None:
     os.makedirs(LOGS, exist_ok=True)
     code_src = find_input("pyproject.toml")
@@ -92,11 +98,17 @@ def main() -> None:
     print(f"{len(jobs)} jobs on {n_gpu} GPU(s)", flush=True)
 
     env = dict(os.environ, CRS_CONFIG_DIR=f"{code}/configs", CRS_DATA_DIR=f"{code}/data")
-    running: dict[int, tuple[subprocess.Popen, dict, str]] = {}
+    running: dict[int, tuple[subprocess.Popen, dict, str, float]] = {}
     queue = list(jobs)
     status = []
     while queue or running:
-        for gpu, (proc, job, ck) in list(running.items()):
+        for gpu, (proc, job, ck, started) in list(running.items()):
+            limit = job.get("timeout_min")
+            if proc.poll() is None and limit and time.time() - started > 60 * limit:
+                print(f"GPU{gpu}: {job_name(job)} hit its {limit} min limit, stopping it", flush=True)
+                proc.kill()
+                proc.wait()
+                job = {**job, "timed_out": True}
             if proc.poll() is not None:
                 status.append({**job, "returncode": proc.returncode})
                 shutil.rmtree(ck, ignore_errors=True)
@@ -107,19 +119,25 @@ def main() -> None:
                 continue
             job = queue.pop(0)
             ck = f"/tmp/ckpt/gpu{gpu}"
-            name = f"{job['model']}__{job['setting']}__{job['fix']}__n{job['samples']}"
-            cmd = [sys.executable, "-m", "crs.run", "gen", "--model", job["model"], "--setting", job["setting"],
-                   "--fix", job["fix"], "--samples", str(job["samples"]), "--results", RESULTS, "--ckpt-dir", ck, *extra]
+            name = job_name(job)
+            if job.get("kind") == "bench":
+                cmd = [sys.executable, "-m", "crs.run", "bench", "--model", job["model"], "--attn", job["attn"],
+                       "--concurrency", str(job["concurrency"]), "--gen-tokens", str(job["gen_tokens"]),
+                       "--results", RESULTS, "--ckpt-dir", ck]
+            else:
+                cmd = [sys.executable, "-m", "crs.run", "gen", "--model", job["model"], "--setting", job["setting"],
+                       "--fix", job["fix"], "--samples", str(job["samples"]), "--results", RESULTS, "--ckpt-dir", ck,
+                       *extra]
             log = open(f"{LOGS}/{name}.log", "a")
             print(f"[{hours:.2f} h] GPU{gpu}: {name}", flush=True)
             running[gpu] = (subprocess.Popen(cmd, cwd=code, env={**env, "CUDA_VISIBLE_DEVICES": str(gpu)},
-                                             stdout=log, stderr=subprocess.STDOUT), job, ck)
+                                             stdout=log, stderr=subprocess.STDOUT), job, ck, time.time())
         if not running and (not queue or hours > TIME_BUDGET_H):
             break
         time.sleep(20)
 
     # budgets for the no-fix, single-sample runs, then scoring (cheap)
-    for job in [j for j in jobs if j["fix"] == "none" and j["samples"] == 1]:
+    for job in [j for j in jobs if j.get("kind", "gen") == "gen" and j["fix"] == "none" and j["samples"] == 1]:
         if (time.time() - T0) / 3600 > TIME_BUDGET_H + 0.5:
             break
         sh(f"{sys.executable} -m crs.run budget --model {job['model']} --setting {job['setting']} --fix none "

@@ -41,6 +41,16 @@ def test_never_correct_and_correct():
     assert score_record(rec)["outcome"] == "correct"
 
 
+def test_truncated_is_not_commit_fail():
+    """Ran out of tokens before answering: 'truncated', even though 42 appeared earlier."""
+    rec = dict(COMMIT_FAIL, answer_text="", finish_reason="length")
+    row = score_record(rec)
+    assert row["outcome"] == "truncated" and row["outcome_strict"] == "truncated"
+    assert row["had_correct_scan"] and row["truncated"]
+    # stopped on its own with no answer: still a failure of the usual kind
+    assert score_record(dict(rec, finish_reason="stop"))["outcome"] == "commit_fail"
+
+
 def test_numeric_conclusion_hit(tok):
     think = "She has 3 apples and buys 2 more.\nTherefore she has 5 apples in total.\nWait, she gave one away."
     s = scan(think, "5", tok)

@@ -22,6 +22,7 @@ class DecodeSpec:
     logit_bias: dict[int, float] | None = None
     # {"token_ids": [...], "alpha_max": float, "h0": float, "tau": float, "think_end_ids": [...]}
     entropy_penalty: dict[str, Any] | None = None
+    ignore_eos: bool = False  # benchmarks only: every sequence runs to max_tokens
     extra: dict[str, Any] = field(default_factory=dict)
 
 

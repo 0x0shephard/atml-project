@@ -36,6 +36,7 @@ Run outputs go to `results/<model>/<setting>/<fix>/`. Each holds `records.jsonl`
 | Label | Meaning |
 |---|---|
 | `correct` | the final answer is right |
+| `truncated` | no final answer, because generation hit the token limit; never counted as a commitment failure |
 | `commit_fail` | the final answer is wrong or missing, but the correct answer appeared in the reasoning first |
 | `never_correct` | the final answer is wrong and the correct answer never appeared |
 
@@ -79,7 +80,13 @@ The last command writes `data/problems.jsonl`. It only needs to run once; commit
    - `records_with_nonfinite_logprobs` should be 0. Otherwise set that model's `dtype` to
      `float32` in `models.yaml`.
    - `tokens_per_s` gives the throughput used to plan the GPU-hours.
-4. Run the main jobs group by group, starting with:
+4. Measure vLLM speed before the main runs:
+   ```bash
+   kaggle/push.sh <your-kaggle-username> bench.yaml
+   ```
+   Each job writes `results/bench/<model>__<attention backend>__c<concurrency>.json`. Put the
+   fastest backend in `vllm_attention_backend` in `models.yaml`.
+5. Run the main jobs group by group, starting with:
    ```bash
    kaggle/push.sh <your-kaggle-username> priority.yaml P1-main-test
    ```
@@ -135,9 +142,12 @@ The report writes:
 - **Wanda calibration.** Activation norms come from one pass through the dense model, not
   Wanda's layer-by-layer pass. Calibration text is the baseline's own reasoning chains,
   falling back to wikitext.
-- **KV-cache settings.** These run on the HF backend with fake-quantized K/V (per token,
-  groups of 64). They are compared with `base-hf`, so differences in backend numerics don't
-  read as compression effects.
+- **KV-cache settings.** These run on the HF backend with KIVI-style fake-quantized K/V.
+  Keys are quantized per channel over blocks of 32 tokens, values per token in groups of 32
+  channels, and the newest 128 tokens stay in full precision. They are compared with
+  `base-hf`, so differences in backend numerics don't read as compression effects.
+  Per-token keys, the first version, made int4 output gibberish: Qwen keys have outlier
+  channels.
 - **Penalty token matching.** The fixed penalty hits every single-token variant of each word.
   Words with no single-token variant are skipped and logged in `meta.json`. Hesitation rates
   are always counted with the hand-written list, whatever the fix.

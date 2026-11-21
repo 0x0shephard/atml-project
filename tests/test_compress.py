@@ -1,7 +1,7 @@
 import torch
 
 from crs.compress.apply import compress_model, target_linears
-from crs.compress.kvcache import FakeQuantKVCache, fake_quant_lastdim
+from crs.compress.kvcache import FakeQuantKVCache, fake_quant_lastdim, fake_quant_tokens
 from crs.compress.lowrank import svd_truncate
 from crs.compress.prune import magnitude_prune, wanda_prune
 from crs.compress.quant import fake_quant_rtn
@@ -57,6 +57,31 @@ def test_compress_model_targets_decoder_linears(tiny):
 
 def test_kv_cache_generate(tiny, tok):
     ids = torch.tensor([tok.encode("Hello there")])
-    out = tiny.generate(ids, max_new_tokens=5, do_sample=False, past_key_values=FakeQuantKVCache(2, 16),
+    out = tiny.generate(ids, max_new_tokens=5, do_sample=False, past_key_values=FakeQuantKVCache(2, 16, key_group=4, residual=2),
                         pad_token_id=tok.eos_token_id)
     assert out.shape[1] == ids.shape[1] + 5
+
+
+def test_kv_per_channel_handles_outlier_channels():
+    """Keys with one huge channel (as in Qwen): per-channel int4 keeps the other channels,
+    per-token int4 flattens them. This is why int4 output was gibberish."""
+    torch.manual_seed(0)
+    k = torch.randn(1, 2, 64, 128)
+    k[..., 7] *= 100
+    rest = [c for c in range(128) if c != 7]
+    err_tok = (fake_quant_lastdim(k, 4, 64) - k)[..., rest].abs().mean()
+    err_ch = (fake_quant_tokens(k, 4) - k)[..., rest].abs().mean()
+    assert err_ch < err_tok / 5
+
+
+def test_kv_cache_residual_window():
+    """Only whole blocks older than the newest `residual` tokens are quantized."""
+    c = FakeQuantKVCache(bits=2, group_size=16, key_group=8, residual=10)
+    k, v = torch.randn(1, 2, 30, 32), torch.randn(1, 2, 30, 32)
+    ko, vo = c.update(k.clone(), v.clone(), 0)
+    assert c.n_quant[0] == 16  # 30 - 10 = 20 old tokens -> 2 whole blocks of 8
+    assert torch.equal(ko[:, :, 16:], k[:, :, 16:]) and torch.equal(vo[:, :, 16:], v[:, :, 16:])
+    assert not torch.equal(ko[:, :, :16], k[:, :, :16])
+    assert all(ko[0, 0, :8, ch].unique().numel() <= 4 for ch in range(32))  # 2 bits per channel block
+    ko, _ = c.update(torch.randn(1, 2, 6, 32), torch.randn(1, 2, 6, 32), 0)  # 36 tokens -> 3 blocks
+    assert c.n_quant[0] == 24 and ko.shape[-2] == 36

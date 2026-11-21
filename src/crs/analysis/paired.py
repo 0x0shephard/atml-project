@@ -56,6 +56,7 @@ def compare(cur: pd.DataFrame, ref: pd.DataFrame, rng: np.random.Generator) -> d
         "d_commit_fail_lo": clo, "d_commit_fail_hi": chi, "p_commit_fail_mcnemar": mcnemar_p(cfr, cf),
         "commit_share_of_errors": cf[err].mean() if err.any() else np.nan,
         "never_correct": m["never_correct"].mean(),
+        "truncated": m["truncated"].mean(), "truncated_ref": m["truncated_ref"].mean(),
         "unanswered": 1 - m["answered"].mean(),
         "think_tokens_mean": lt.mean(), "think_tokens_ref_mean": ltr.mean(),
         "length_ratio": lt.mean() / max(ltr.mean(), 1e-9), "p_length_wilcoxon": wilcoxon_p(lt, ltr),
@@ -76,7 +77,7 @@ def table(df: pd.DataFrame, ref_key: Callable[[str, str], tuple[str, str]], seed
         ref = mv[(mv["model"] == model) & (mv["setting"] == rs) & (mv["fix"] == rf)]
         if ref.empty:
             continue
-        cols = ["problem_id", "correct", "commit_fail", "never_correct", "answered", "n_think_tokens", "hesitation_per_1k"]
+        cols = ["problem_id", "correct", "commit_fail", "never_correct", "truncated", "answered", "n_think_tokens", "hesitation_per_1k"]
         res = compare(cur[cols], ref[cols], rng)
         rows.append({"model": model, "setting": setting, "fix": fix, "ref_setting": rs, "ref_fix": rf,
                      "family": cur["family"].iloc[0], "severity": cur["severity"].iloc[0], **res})

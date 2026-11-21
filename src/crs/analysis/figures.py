@@ -57,8 +57,9 @@ def outcome_bars(df: pd.DataFrame, out: Path) -> None:
     d = df[df["budget"].isna() & (df["fix"] == "none") & (df["samples"] == 1)]
     for model, g in d.groupby("model"):
         tab = g.groupby("setting")["outcome"].value_counts(normalize=True).unstack(fill_value=0)
-        tab = tab.reindex(columns=[c for c in ["correct", "commit_fail", "never_correct"] if c in tab.columns])
-        ax = tab.plot.bar(stacked=True, figsize=(max(6, 0.5 * len(tab)), 4), color=["#4c9f70", "#e07a5f", "#8d99ae"])
+        colors = {"correct": "#4c9f70", "commit_fail": "#e07a5f", "never_correct": "#8d99ae", "truncated": "#d9c27a"}
+        tab = tab.reindex(columns=[c for c in colors if c in tab.columns])
+        ax = tab.plot.bar(stacked=True, figsize=(max(6, 0.5 * len(tab)), 4), color=[colors[c] for c in tab.columns])
         ax.set(ylabel="share of problems", title=f"{model}: outcomes (no fix)")
         ax.figure.tight_layout()
         ax.figure.savefig(out / f"outcomes_{model}.png", dpi=150)

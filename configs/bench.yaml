@@ -1,0 +1,24 @@
+# Speed test and KV-cache check (run after the 2026-11-21 smoke runs).
+#
+# 1. speed: vLLM on T4 fell back to FlexAttention and ran at about 80 tokens/s with 10
+#    sequences, too slow for the 30 GPU-h/week budget. Each bench job loads the uncompressed
+#    model, sends `concurrency` problems at once and makes every one generate exactly
+#    `gen_tokens` tokens with the real sampling and logprob settings, then writes
+#    results/bench/<model>__<backend>__c<N>.json. A job that passes `timeout_min` is
+#    stopped and counts as "too slow".
+# 2. kv-check: the KIVI-style KV quantization (per-channel keys) replaces the per-token
+#    version that made int4 output gibberish. 10 problems, 1,024 tokens, like the smoke run.
+limit: 10
+max_tokens: 1024
+groups:
+  - name: kv-check
+    models: [r1-1.5b, qwen3-1.7b]
+    settings: [kv-int4, kv-int8]
+    fixes: [none]
+  - name: speed
+    models: [r1-1.5b, qwen3-1.7b]
+    bench:
+      attention_backends: [FLEX_ATTENTION, TRITON_ATTN, XFORMERS]
+      concurrency: [64, 256]
+      gen_tokens: 2048
+      timeout_min: 15

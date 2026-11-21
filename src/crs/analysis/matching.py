@@ -14,7 +14,7 @@ import pandas as pd
 
 from .load import main_view, reference_setting
 
-METRICS = ["commit_fail", "commit_share_of_errors", "never_correct", "hesitation_per_1k", "n_think_tokens"]
+METRICS = ["commit_fail", "commit_share_of_errors", "never_correct", "truncated", "hesitation_per_1k", "n_think_tokens"]
 TARGETS = (0.05, 0.10, 0.15)
 
 

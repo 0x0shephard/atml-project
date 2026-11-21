@@ -128,7 +128,7 @@ class HFBackend(Backend):
             kwargs.update(do_sample=True, temperature=spec.temperature, top_p=spec.top_p,
                           top_k=spec.top_k if spec.top_k and spec.top_k > 0 else 0)
         if self.kv:
-            kwargs["past_key_values"] = FakeQuantKVCache(self.kv["bits"], self.kv.get("group_size", 64))
+            kwargs["past_key_values"] = FakeQuantKVCache(**self.kv)
         out = self.model.generate(input_ids=input_ids, attention_mask=attn, **kwargs)
         new = out[:, L:]
         lp = ent = None

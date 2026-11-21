@@ -28,13 +28,15 @@ settings:
   - {name: svd-r80,       family: lowrank, severity: 0.20, backend: vllm, weight: {method: svd, rank_frac: 0.80}}
   - {name: svd-r70,       family: lowrank, severity: 0.30, backend: vllm, weight: {method: svd, rank_frac: 0.70}}
 
-  # KV-cache quantization (fake-quant, per-token groups along head_dim). HF backend.
-  - {name: kv-int8,       family: kvquant, severity: 1, backend: hf, kv: {bits: 8, group_size: 64}}
-  - {name: kv-int4,       family: kvquant, severity: 2, backend: hf, kv: {bits: 4, group_size: 64}}
-  - {name: kv-int2,       family: kvquant, severity: 3, backend: hf, kv: {bits: 2, group_size: 64}}
+  # KV-cache quantization, KIVI-style fake-quant (HF backend): keys per channel over blocks of
+  # 32 tokens, values per token in groups of 32 channels, newest 128 tokens kept full precision.
+  # Per-token keys (the first version) made int4 output gibberish, see compress/kvcache.py.
+  - {name: kv-int8,       family: kvquant, severity: 1, backend: hf, kv: {bits: 8, group_size: 32, key_group: 32, residual: 128}}
+  - {name: kv-int4,       family: kvquant, severity: 2, backend: hf, kv: {bits: 4, group_size: 32, key_group: 32, residual: 128}}
+  - {name: kv-int2,       family: kvquant, severity: 3, backend: hf, kv: {bits: 2, group_size: 32, key_group: 32, residual: 128}}
 
   # Combined setting
-  - {name: combo-w4-kv4,  family: combo, severity: 1, backend: hf, weight: {method: rtn, bits: 4, group_size: 128}, kv: {bits: 4, group_size: 64}}
+  - {name: combo-w4-kv4,  family: combo, severity: 1, backend: hf, weight: {method: rtn, bits: 4, group_size: 128}, kv: {bits: 4, group_size: 32, key_group: 32, residual: 128}}
 
   # Control (not one of the 18): uncompressed model on the HF backend, the paired
   # reference for the KV-cache settings so backend numerics don't masquerade as an effect.
