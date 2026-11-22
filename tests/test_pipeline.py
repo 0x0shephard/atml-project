@@ -83,3 +83,29 @@ def test_bench_jobs_expand():
     assert all(j["timeout_min"] and j["gen_tokens"] for j in bench)
     assert {j["setting"] for j in jobs if j["kind"] == "gen"} == {"kv-int4", "kv-int8"}
     assert extra == {"limit": 10, "max_tokens": 1024}
+
+
+def test_hf_batch_matches_single_and_drops_finished(tok):
+    """Batched greedy decoding (left padding, rows dropped when they finish) gives the same
+    tokens as decoding each prompt alone."""
+    model = make_tiny(tok)
+    be = HFBackend(model=model, tokenizer=tok, dtype="float32", batch_size=3, device="cpu")
+    prompts = [[5, 6, 7], [8, 9, 10, 11, 12, 13], [14, 15]]
+    spec = DecodeSpec(max_tokens=12, greedy=True, logprobs_k=5)
+    # make the first prompt's 3rd generated token an EOS so that row stops early
+    first = be.generate(prompts[:1], DecodeSpec(max_tokens=12, greedy=True, logprobs_k=0))[0][0].token_ids
+    be.eos_ids = [first[2]]
+    batched = [r[0] for r in be.generate(prompts, spec)]
+    single = [be.generate([p], spec)[0][0] for p in prompts]
+    assert batched[0].finish_reason == "stop" and len(batched[0].token_ids) <= 3
+    for b, s in zip(batched, single):
+        assert b.token_ids == s.token_ids and b.finish_reason == s.finish_reason
+        assert np.allclose(b.logprobs, s.logprobs, atol=1e-4) and np.allclose(b.entropy, s.entropy, atol=1e-4)
+
+
+def test_group_limit(tmp_path):
+    f = tmp_path / "jobs.yaml"
+    f.write_text("groups:\n  - {name: a, models: [r1-1.5b], settings: [base], fix: none, limit: 7}\n"
+                 "  - {name: b, models: [r1-1.5b], settings: [kv-int4], fix: none}\n")
+    jobs, extra = expand_jobs(f)
+    assert jobs[0]["limit"] == 7 and "limit" not in jobs[1] and extra == {}

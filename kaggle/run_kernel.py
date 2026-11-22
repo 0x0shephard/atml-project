@@ -5,8 +5,9 @@ Inputs attached as datasets:
   <user>/crs-results  results gathered so far (so finished problems are skipped)
 
 Runs the jobs of JOB_FILE (optionally only GROUPS) on every visible GPU, one job per
-GPU at a time, until the jobs are done or TIME_BUDGET_H runs out. Then derives budgets
-and scores the runs. Everything is written to /kaggle/working/results.
+GPU at a time, until the jobs are done or TIME_BUDGET_H runs out (running jobs are stopped
+then, so the session ends cleanly). Then forces answers at each thinking budget. Scoring
+is left to `crs.run score` locally. Everything is written to /kaggle/working.
 """
 
 import glob
@@ -20,7 +21,8 @@ import time
 
 JOB_FILE = "priority.yaml"  # set by push.sh
 GROUPS: list = []  # set by push.sh; empty = all groups
-TIME_BUDGET_H = 11.0  # Kaggle sessions stop at 12 h
+TIME_BUDGET_H = 10.5  # generation stops here (set by push.sh); Kaggle kills the session at 12 h
+POST_BUDGET_H = 1.2   # then the forced-answer step gets this long. Scoring runs locally (slow on CPU)
 VLLM_SPEC = "vllm==0.11.0"  # needs AdapterLogitsProcessor (>= 0.11); T4 works in float16
 # vLLM 0.11 breaks on transformers 5 (Kaggle's default image): tokenizers lost all_special_tokens_extended
 TRANSFORMERS_SPEC = "transformers>=4.56,<5"
@@ -110,6 +112,14 @@ def main() -> None:
                 proc.kill()
                 proc.wait()
                 job = {**job, "timed_out": True}
+            elif proc.poll() is None and (time.time() - T0) / 3600 > TIME_BUDGET_H:
+                # session nearly over: stop now so the forced-answer step still runs. Finished
+                # chunks are on disk, only the one in progress is lost; the job resumes next session.
+                print(f"GPU{gpu}: {job_name(job)} stopped at the session time budget", flush=True)
+                proc.kill()
+                proc.wait()
+                job = {**job, "stopped_at_budget": True}
+                queue.insert(0, {k: v for k, v in job.items() if k != "stopped_at_budget"})
             if proc.poll() is not None:
                 # vLLM runs its engine in a child process that outlives a killed parent and keeps
                 # holding GPU memory; in the 2026-11-21 bench run that made the next jobs on the
@@ -135,7 +145,7 @@ def main() -> None:
             else:
                 cmd = [sys.executable, "-m", "crs.run", "gen", "--model", job["model"], "--setting", job["setting"],
                        "--fix", job["fix"], "--samples", str(job["samples"]), "--results", RESULTS, "--ckpt-dir", ck,
-                       *extra]
+                       *extra, *(["--limit", str(job["limit"])] if job.get("limit") else [])]
             log = open(f"{LOGS}/{name}.log", "a")
             print(f"[{hours:.2f} h] GPU{gpu}: {name}", flush=True)
             running[gpu] = (subprocess.Popen(cmd, cwd=code, env={**env, "CUDA_VISIBLE_DEVICES": str(gpu)},
@@ -145,17 +155,30 @@ def main() -> None:
             break
         time.sleep(20)
 
-    # budgets for the no-fix, single-sample runs, then scoring (cheap)
-    for job in [j for j in jobs if j.get("kind", "gen") == "gen" and j["fix"] == "none" and j["samples"] == 1]:
-        if (time.time() - T0) / 3600 > TIME_BUDGET_H + 0.5:
+    def write_status() -> None:
+        json.dump({"jobs": status, "hours": (time.time() - T0) / 3600, "left": queue},
+                  open(f"{WORK}/status.json", "w"), indent=1)
+
+    write_status()
+    # forced answers at each thinking budget (incl. the 8,192 cut-off) for the no-fix,
+    # single-sample runs that have chains, first those that finished this session
+    seen, todo = set(), []
+    for job in [j for j in status if j.get("kind", "gen") == "gen"] + [j for j in jobs if j.get("kind", "gen") == "gen"]:
+        key = (job["model"], job["setting"])
+        if job["fix"] == "none" and job["samples"] == 1 and key not in seen \
+                and os.path.exists(f"{RESULTS}/{job['model']}/{job['setting']}/none/records.jsonl"):
+            seen.add(key)
+            todo.append(job)
+    for job in todo:
+        if (time.time() - T0) / 3600 > TIME_BUDGET_H + POST_BUDGET_H:
+            print("out of time for the forced-answer step", flush=True)
             break
         sh(f"{sys.executable} -m crs.run budget --model {job['model']} --setting {job['setting']} --fix none "
            f"--results {RESULTS} --ckpt-dir /tmp/ckpt/budget >> {LOGS}/budget.log 2>&1", cwd=code, env=env)
         shutil.rmtree("/tmp/ckpt/budget", ignore_errors=True)
-    sh(f"{sys.executable} -m crs.run score --runs '{RESULTS}/*/*/*' > {LOGS}/score.log 2>&1", cwd=code, env=env)
     open(f"{RESULTS}/KEEP", "w").close()
-    json.dump({"jobs": status, "hours": (time.time() - T0) / 3600, "left": queue}, open(f"{WORK}/status.json", "w"), indent=1)
-    print(open(f"{LOGS}/score.log").read())
+    write_status()
+    print(json.dumps({"hours": (time.time() - T0) / 3600, "left": len(queue)}), flush=True)
 
 
 if __name__ == "__main__":

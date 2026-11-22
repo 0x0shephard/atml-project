@@ -152,7 +152,8 @@ def generate_run(model_key: str, setting: str, fix: str, samples: int = 1, limit
                                entropy_penalty=bool(spec.entropy_penalty), backend=backend_kind)
 
     t_start, n_tok, n_nonfinite = time.time(), 0, 0
-    chunk = gd["chunk_size"]
+    kind = backend_kind or config.settings()[setting].backend
+    chunk = gd.get("chunk_size_hf", gd["chunk_size"]) if kind == "hf" else gd["chunk_size"]
     for c in range(0, len(todo), chunk):
         batch = todo[c:c + chunk]
         spec.seeds = [stable_seed(gd["seed"], p["id"]) for p in batch]
@@ -246,8 +247,11 @@ def expand_jobs(spec_file: str | Path) -> tuple[list[dict[str, Any]], dict[str, 
         for fix in fixes:
             for m in g["models"]:
                 for s in g["settings"]:
-                    jobs.append({"group": g["name"], "kind": "gen", "model": m, "setting": s, "fix": fix,
-                                 "samples": g.get("samples", 1)})
+                    job = {"group": g["name"], "kind": "gen", "model": m, "setting": s, "fix": fix,
+                           "samples": g.get("samples", 1)}
+                    if g.get("limit"):  # per-group problem limit (first N problems), overrides the file's
+                        job["limit"] = g["limit"]
+                    jobs.append(job)
     extra = {k: spec[k] for k in ("limit", "max_tokens") if k in spec}
     return jobs, extra
 

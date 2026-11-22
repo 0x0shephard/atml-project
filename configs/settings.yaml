@@ -23,10 +23,17 @@ settings:
   # Magnitude pruning at one level, as a calibration-free pruning control
   - {name: mag-30,        family: magnitude, severity: 0.3, backend: vllm, weight: {method: magnitude, sparsity: 0.3}}
 
-  # Low-rank truncation (plain SVD, keep a fraction of each matrix's full rank)
+  # Low-rank truncation: keep a fraction of each matrix's full rank. Plain SVD at 80% left R1 with
+  # 0% accuracy and garbage text (2026-11-22). The asvd-* settings scale by activation size first
+  # (compress/lowrank.py). The calibration run picks which levels the study uses.
+  - {name: svd-r95,       family: lowrank, severity: 0.05, backend: vllm, weight: {method: svd, rank_frac: 0.95}}
   - {name: svd-r90,       family: lowrank, severity: 0.10, backend: vllm, weight: {method: svd, rank_frac: 0.90}}
   - {name: svd-r80,       family: lowrank, severity: 0.20, backend: vllm, weight: {method: svd, rank_frac: 0.80}}
   - {name: svd-r70,       family: lowrank, severity: 0.30, backend: vllm, weight: {method: svd, rank_frac: 0.70}}
+  - {name: asvd-r95,      family: lowrank, severity: 0.05, backend: vllm, weight: {method: asvd, rank_frac: 0.95, alpha: 0.5}}
+  - {name: asvd-r90,      family: lowrank, severity: 0.10, backend: vllm, weight: {method: asvd, rank_frac: 0.90, alpha: 0.5}}
+  - {name: asvd-r85,      family: lowrank, severity: 0.15, backend: vllm, weight: {method: asvd, rank_frac: 0.85, alpha: 0.5}}
+  - {name: asvd-r80,      family: lowrank, severity: 0.20, backend: vllm, weight: {method: asvd, rank_frac: 0.80, alpha: 0.5}}
 
   # KV-cache quantization, KIVI-style fake-quant (HF backend): keys per channel over blocks of
   # 32 tokens, values per token in groups of 32 channels, newest 128 tokens kept full precision.

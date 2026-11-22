@@ -14,4 +14,6 @@ fixes:
   budget-4096: {type: budget, max_think: 4096}
 
 # Budgets evaluated by truncating the full-length chains (RQ6 and the budget fix).
-budgets: [512, 1024, 2048, 4096]
+budgets: [512, 1024, 2048, 4096, 8192]
+# 8192 = the generation limit itself: chains cut off there (no answer) are made to answer, which
+# separates "knew the answer but could not stop" from "did not know it".

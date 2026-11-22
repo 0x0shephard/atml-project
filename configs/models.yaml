@@ -9,7 +9,7 @@ models:
     think_end: "</think>"
     chat_template_kwargs: {}
     sampling: {temperature: 0.6, top_p: 0.95, top_k: -1}
-    hf_batch_size: 24       # HF backend (KV settings); 2 KV heads -> small cache
+    hf_batch_size: 40       # HF backend (KV settings); 2 KV heads -> small cache (40 x 8.4k tok ~ 9.4 GB)
 
   qwen3-1.7b:
     hf_id: Qwen/Qwen3-1.7B
@@ -39,6 +39,8 @@ generation:
   max_tokens: 8192          # total new tokens (thinking + answer)
   logprobs_k: 20            # top-k logprobs kept per token for the entropy estimate
   seed: 1234
-  chunk_size: 64            # problems per write-out chunk (resumability granularity)
+  chunk_size: 180           # problems per write-out chunk, vLLM. 64 left the GPU idle while each
+                            # chunk's slowest chain finished (~300 tok/s vs 630 in the bench).
+  chunk_size_hf: 80         # same for the HF backend (KV settings): 2 batches of 40 for R1
   vllm_attention_backend: TRITON_ATTN  # 2026-11-21 bench on T4: the only one that works. FlexAttention (vLLM's
                                       # default) runs out of memory mid-run; xFormers has no T4 kernel.

@@ -1,70 +1,32 @@
 """HF transformers generation backend.
 
 Used for the KV-cache settings (which need a custom cache) and for local CPU tests.
-Per-token statistics are recorded by a logits processor placed first in the chain, so it
-sees the raw model logits, the same distribution vLLM reports logprobs for.
+
+It runs its own decode loop instead of ``model.generate``. ``generate`` keeps a finished
+sequence in the batch until the longest one ends, so every batch ran for the full 8,192
+steps. In the 2026-11-21 main run that came to about 40 tok/s, roughly 12 h for one KV
+setting. Here a finished sequence is dropped from the batch and the cache at once, so each
+step only does work for the sequences still running.
+
+Per-token statistics come from the raw model logits, before any bias, penalty or sampling
+warper, which is the same distribution vLLM reports logprobs for. Sampling uses the HF
+temperature / top-k / top-p warpers, in that order, as ``generate`` does.
 """
 
 from __future__ import annotations
 
 import numpy as np
 import torch
-from transformers import LogitsProcessor, LogitsProcessorList
+from transformers import DynamicCache, TemperatureLogitsWarper, TopKLogitsWarper, TopPLogitsWarper
 
 from ..compress.kvcache import FakeQuantKVCache
 from ..decoding.penalties import EntropyPenalty
 from ..record import GenResult, topk_entropy_torch
 from .base import Backend, DecodeSpec
 
-
-class StatsRecorder(LogitsProcessor):
-    """Records the chosen-token log-prob and a top-k entropy estimate per step."""
-
-    def __init__(self, k: int):
-        self.k = k
-        self.prev_logp: torch.Tensor | None = None
-        self.lp: list[torch.Tensor] = []
-        self.ent: list[torch.Tensor] = []
-
-    def __call__(self, input_ids: torch.LongTensor, scores: torch.FloatTensor) -> torch.FloatTensor:
-        logp = torch.log_softmax(scores.float(), dim=-1)
-        if self.prev_logp is not None:
-            self.lp.append(self.prev_logp.gather(1, input_ids[:, -1:]).squeeze(1))
-        self.ent.append(topk_entropy_torch(logp.topk(self.k, dim=-1).values))
-        self.prev_logp = logp
-        return scores
-
-    def finish(self, last_tokens: torch.Tensor) -> tuple[np.ndarray, np.ndarray]:
-        if self.prev_logp is not None:
-            self.lp.append(self.prev_logp.gather(1, last_tokens[:, None]).squeeze(1))
-        lp = torch.stack(self.lp, 1).cpu().numpy()
-        ent = torch.stack(self.ent, 1).cpu().numpy()
-        return lp, ent
-
-
-class BiasProcessor(LogitsProcessor):
-    def __init__(self, bias: dict[int, float]):
-        self.ids = torch.tensor(list(bias.keys()), dtype=torch.long)
-        self.vals = torch.tensor(list(bias.values()), dtype=torch.float32)
-
-    def __call__(self, input_ids, scores):  # noqa: ANN001, ANN204
-        ids = self.ids.to(scores.device)
-        scores[:, ids] = scores[:, ids] + self.vals.to(scores.device, scores.dtype)
-        return scores
-
-
-class EntropyPenaltyProcessor(LogitsProcessor):
-    def __init__(self, cfg: dict, prompt_len: int):
-        self.pen = EntropyPenalty(**cfg)
-        self.prompt_len = prompt_len
-        self.closed: torch.Tensor | None = None
-
-    def __call__(self, input_ids, scores):  # noqa: ANN001, ANN204
-        if self.closed is None:
-            self.closed = torch.zeros(input_ids.shape[0], dtype=torch.bool, device=scores.device)
-        if input_ids.shape[1] > self.prompt_len:
-            self.closed |= input_ids[:, -1] == self.pen.think_end_last
-        return self.pen.apply_batch(scores, ~self.closed)
+# Prefill materialises [batch, prompt_len, intermediate] activations; cap the tokens per prefill so
+# long prompts (the forced-answer step feeds whole 8k-token chains back in) run in smaller batches.
+PREFILL_TOKEN_BUDGET = 16384
 
 
 class HFBackend(Backend):
@@ -85,7 +47,7 @@ class HFBackend(Backend):
         self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
         torch_dtype = getattr(torch, dtype)
         if model is None:
-            model = AutoModelForCausalLM.from_pretrained(model_path, torch_dtype=torch_dtype)
+            model = AutoModelForCausalLM.from_pretrained(model_path, dtype=torch_dtype)
         self.model = model.to(self.device).eval()
         self.tok = tokenizer or AutoTokenizer.from_pretrained(tokenizer_path or model_path)
         self.kv = kv
@@ -95,58 +57,102 @@ class HFBackend(Backend):
         self.eos_ids = [eos] if isinstance(eos, int) else list(eos)
         self.pad_id = self.tok.pad_token_id if self.tok.pad_token_id is not None else self.eos_ids[0]
 
+    def _warpers(self, spec: DecodeSpec) -> list:
+        if spec.greedy:
+            return []
+        w = []
+        if spec.temperature and spec.temperature != 1.0:
+            w.append(TemperatureLogitsWarper(spec.temperature))
+        if spec.top_k and spec.top_k > 0:
+            w.append(TopKLogitsWarper(spec.top_k))
+        if spec.top_p is not None and spec.top_p < 1.0:
+            w.append(TopPLogitsWarper(spec.top_p))
+        return w
+
     @torch.inference_mode()
     def _generate_batch(self, prompts: list[list[int]], spec: DecodeSpec, seed: int | None) -> list[GenResult]:
-        L = max(len(p) for p in prompts)
-        input_ids = torch.full((len(prompts), L), self.pad_id, dtype=torch.long)
-        attn = torch.zeros((len(prompts), L), dtype=torch.long)
+        dev = self.device
+        B, L, T = len(prompts), max(len(p) for p in prompts), spec.max_tokens
+        input_ids = torch.full((B, L), self.pad_id, dtype=torch.long)
+        attn = torch.zeros((B, L), dtype=torch.long)
         for i, p in enumerate(prompts):  # left padding
             input_ids[i, L - len(p):] = torch.tensor(p)
             attn[i, L - len(p):] = 1
-        input_ids, attn = input_ids.to(self.device), attn.to(self.device)
+        input_ids, attn = input_ids.to(dev), attn.to(dev)
 
-        procs = LogitsProcessorList()
-        rec = StatsRecorder(spec.logprobs_k) if spec.logprobs_k else None
-        if rec:
-            procs.append(rec)
+        gen = None
+        if seed is not None and not spec.greedy:
+            gen = torch.Generator(device=dev)
+            gen.manual_seed(seed)
+        warpers = self._warpers(spec)
+        bias_ids = bias_vals = None
         if spec.logit_bias:
-            procs.append(BiasProcessor(spec.logit_bias))
-        if spec.entropy_penalty:
-            procs.append(EntropyPenaltyProcessor(spec.entropy_penalty, L))
+            bias_ids = torch.tensor(list(spec.logit_bias), dtype=torch.long, device=dev)
+            bias_vals = torch.tensor(list(spec.logit_bias.values()), dtype=torch.float32, device=dev)
+        pen = EntropyPenalty(**spec.entropy_penalty) if spec.entropy_penalty else None
+        eos = torch.tensor(self.eos_ids, dtype=torch.long, device=dev)
 
-        if seed is not None:
-            torch.manual_seed(seed)
-        kwargs = dict(
-            max_new_tokens=spec.max_tokens,
-            logits_processor=procs,
-            pad_token_id=self.pad_id,
-            eos_token_id=self.eos_ids,
-        )
-        if spec.greedy:
-            kwargs.update(do_sample=False, temperature=None, top_p=None, top_k=None)
-        else:
-            kwargs.update(do_sample=True, temperature=spec.temperature, top_p=spec.top_p,
-                          top_k=spec.top_k if spec.top_k and spec.top_k > 0 else 0)
-        if self.kv:
-            kwargs["past_key_values"] = FakeQuantKVCache(**self.kv)
-        out = self.model.generate(input_ids=input_ids, attention_mask=attn, **kwargs)
-        new = out[:, L:]
-        lp = ent = None
-        if rec is not None and new.shape[1] > 0:
-            lp, ent = rec.finish(new[:, -1])
+        # outputs for every original row; `rows` maps the live batch back to them
+        out_tok = torch.full((B, T), self.pad_id, dtype=torch.long, device=dev)
+        out_lp = torch.zeros((B, T), dtype=torch.float32, device=dev)
+        out_ent = torch.zeros((B, T), dtype=torch.float32, device=dev)
+        length = torch.full((B,), T, dtype=torch.long, device=dev)
+        stopped = torch.zeros(B, dtype=torch.bool, device=dev)
+        rows = torch.arange(B, device=dev)
+        thinking = torch.ones(B, dtype=torch.bool, device=dev)
+
+        cache = FakeQuantKVCache(**self.kv) if self.kv else DynamicCache()
+        pos = (attn.cumsum(-1) - 1).clamp_min(0)
+        logits = self.model(input_ids=input_ids, attention_mask=attn, position_ids=pos, past_key_values=cache,
+                            use_cache=True, logits_to_keep=1).logits[:, -1, :]
+
+        for t in range(T):
+            scores = logits.float()
+            if spec.logprobs_k:
+                logp = torch.log_softmax(scores, dim=-1)
+                out_ent[rows, t] = topk_entropy_torch(logp.topk(spec.logprobs_k, dim=-1).values)
+            if bias_ids is not None:
+                scores[:, bias_ids] += bias_vals
+            if pen is not None:
+                scores = pen.apply_batch(scores, thinking)
+            if spec.greedy:
+                nxt = scores.argmax(-1)
+            else:
+                for w in warpers:
+                    scores = w(None, scores)
+                nxt = torch.multinomial(torch.softmax(scores, dim=-1), 1, generator=gen).squeeze(1)
+            out_tok[rows, t] = nxt
+            if spec.logprobs_k:
+                out_lp[rows, t] = logp.gather(1, nxt[:, None]).squeeze(1)
+            if pen is not None and pen.think_end_last is not None:
+                thinking &= nxt != pen.think_end_last
+            if t == T - 1:
+                break
+            done = torch.isin(nxt, eos) if not spec.ignore_eos else torch.zeros_like(nxt, dtype=torch.bool)
+            if bool(done.any()):
+                length[rows[done]] = t + 1
+                stopped[rows[done]] = True
+                keep = (~done).nonzero().squeeze(1)
+                if keep.numel() == 0:
+                    break
+                cache.batch_select_indices(keep)
+                rows, attn, nxt, thinking = rows[keep], attn[keep], nxt[keep], thinking[keep]
+            attn = torch.cat([attn, attn.new_ones((attn.shape[0], 1))], dim=1)
+            pos = attn.sum(-1, keepdim=True) - 1
+            logits = self.model(input_ids=nxt[:, None], attention_mask=attn, position_ids=pos,
+                                past_key_values=cache, use_cache=True).logits[:, -1, :]
+
+        toks, lps, ents = out_tok.cpu().numpy(), out_lp.cpu().numpy(), out_ent.cpu().numpy()
+        lens, stop = length.cpu().tolist(), stopped.cpu().tolist()
+        del cache
         results = []
-        eos = set(self.eos_ids)
-        for i in range(new.shape[0]):
-            ids = new[i].tolist()
-            end = next((j for j, t in enumerate(ids) if t in eos), None)
-            finish = "stop" if end is not None else "length"
-            n = end + 1 if end is not None else len(ids)
-            ids = ids[:n]
+        for i in range(B):
+            n = lens[i]
             results.append(GenResult(
-                ids,
-                lp[i, :n] if lp is not None else None,
-                ent[i, :n] if ent is not None else None,
-                finish,
+                toks[i, :n].tolist(),
+                lps[i, :n] if spec.logprobs_k else None,
+                ents[i, :n] if spec.logprobs_k else None,
+                "stop" if stop[i] else "length",
             ))
         return results
 
@@ -155,8 +161,12 @@ class HFBackend(Backend):
         flat = [(i, s) for i in range(len(prompt_ids)) for s in range(spec.n)]
         order = sorted(range(len(flat)), key=lambda j: len(prompt_ids[flat[j][0]]))
         out: dict[tuple[int, int], GenResult] = {}
-        for b in range(0, len(order), self.batch_size):
-            idx = order[b : b + self.batch_size]
+        b = 0
+        while b < len(order):
+            longest = len(prompt_ids[flat[order[min(b + self.batch_size, len(order)) - 1]][0]])
+            size = max(1, min(self.batch_size, PREFILL_TOKEN_BUDGET // max(longest, 1)))
+            idx = order[b : b + size]
+            b += size
             batch = [prompt_ids[flat[j][0]] for j in idx]
             seed = None
             if spec.seeds:

@@ -16,7 +16,7 @@ compress (simulated, fp16 weights) → generate (vLLM / HF) → record → score
 |---|---|
 | `configs/models.yaml` | the two models, sampling, prompt, max 8,192 tokens |
 | `configs/settings.yaml` | the 18 versions per model, plus the `base-hf` control |
-| `configs/fixes.yaml` | decoding fixes and the budgets 512–4,096 |
+| `configs/fixes.yaml` | decoding fixes and the budgets 512–8,192 |
 | `configs/priority.yaml` | job order if compute runs short; `smoke.yaml` is the 10-problem smoke run |
 | `data/problems.jsonl` | the frozen 360 problems: 200 MATH-500, 100 GSM8K, 30 AIME 2024 and 30 AIME 2025 |
 | `src/crs/compress/` | RTN fake-quant, Wanda and magnitude pruning, SVD truncation, fake-quant KV cache |
@@ -91,7 +91,13 @@ The last command writes `data/problems.jsonl`. It only needs to run once; commit
    kaggle/push.sh <your-kaggle-username> priority.yaml P1-main-test
    ```
    Pull after each session and push again. Finished problems are skipped, because the
-   results gathered so far are uploaded as the `crs-results` dataset.
+   results gathered so far are uploaded as the `crs-results` dataset. Generation stops after
+   `HOURS` (default 10.5, e.g. `HOURS=4 kaggle/push.sh ...`), stopping any job still running.
+   Only that job's current chunk is lost. The forced-answer step then runs. Score locally after
+   pulling, because scoring is CPU-bound and slow.
+6. `calib.yaml` holds the calibration run made after the first main session: a low-rank sweep,
+   resuming the KV-backend runs with the faster HF loop, and forced answers for the finished
+   R1 runs.
 
 ## After generation
 
@@ -154,6 +160,14 @@ The report writes:
 - **Entropy.** It is estimated from the top-20 logprobs of the raw distribution, the same way
   in both backends. The estimate is a lower bound.
 - **Smaller budgets.** These come from truncating the 8,192-token chains and forcing a boxed
-  answer greedily. No new chains are sampled.
+  answer greedily. No new chains are sampled. Budget 8,192 forces an answer from the chains
+  that hit the limit without one. In the first main run that was 24% of R1's chains (41% at
+  W3). It tells "knew it but could not stop" apart from "did not know it".
+- **Low rank.** Plain SVD at 80% rank destroyed R1 (0% accuracy, garbage text). `asvd-*`
+  scales by activation size before truncating (`compress/lowrank.py`), and the calibration
+  run picks the levels.
+- **HF backend speed.** The HF backend runs its own decode loop and drops sequences as they
+  finish. `model.generate` kept every batch running to 8,192 steps, which came to about
+  40 tok/s, roughly 12 h for one KV run.
 - **Hand-written word list.** `src/crs/wordlists/handwritten.txt` is a first draft. Align it
   with Lotfi et al.'s list before the main runs.

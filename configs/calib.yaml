@@ -1,0 +1,24 @@
+# Calibration session after the first main-test session (2026-11-22). R1 only.
+#  1. Low-rank sweep: plain SVD at 80% rank destroyed R1. Try activation-aware SVD at four
+#     levels plus plain SVD at 95% on the first 120 problems, to pick the study's low-rank levels.
+#     These chains are kept: the full runs later resume from them.
+#  2. Resume the two R1 KV-backend runs with the new HF decode loop, so their chunk times
+#     measure its speed (old loop: ~7,300 s per 64 problems).
+#  3. The finished R1 runs are listed so that the forced-answer step (incl. the 8,192 cut-off)
+#     runs for them. Their generation is already complete, so those jobs end at once.
+groups:
+  - name: lowrank-sweep
+    models: [r1-1.5b]
+    settings: [asvd-r90, asvd-r80, asvd-r95, asvd-r85, svd-r95]
+    fix: none
+    limit: 120
+
+  - name: finished-r1
+    models: [r1-1.5b]
+    settings: [base, rtn-w4-g128, rtn-w3-g128, wanda-30, wanda-50]
+    fix: none
+
+  - name: hf-resume
+    models: [r1-1.5b]
+    settings: [kv-int4, base-hf]
+    fix: none

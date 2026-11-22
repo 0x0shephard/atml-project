@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Push the code, the results gathered so far and the run kernel to Kaggle.
 #
-#   kaggle/push.sh <kaggle-username> [smoke.yaml|priority.yaml] [GROUP ...]
+#   [HOURS=10.5] kaggle/push.sh <kaggle-username> [smoke.yaml|priority.yaml] [GROUP ...]
 #
 # Needs the kaggle CLI (`uv tool install kaggle --with six`), signed in with `kaggle auth login`.
 set -euo pipefail
@@ -34,7 +34,9 @@ mkdir -p "$BUILD/results/results"
 touch "$BUILD/results/results/KEEP" "$BUILD/results/crs-results.marker"
 dataset "$BUILD/results" crs-results "crs-results"
 
+HOURS=${HOURS:-10.5}  # generation time budget for this session (Kaggle stops it at 12 h)
 sed -e "s/^JOB_FILE = .*/JOB_FILE = \"$JOBS\"  # set by push.sh/" \
+    -e "s/^TIME_BUDGET_H = [0-9.]*/TIME_BUDGET_H = $HOURS/" \
     -e "s/^GROUPS: list = .*/GROUPS: list = $GROUPS_PY  # set by push.sh/" \
     "$ROOT/kaggle/run_kernel.py" > "$BUILD/kernel/run_kernel.py"
 sed "s/{USER}/$KUSER/g" "$ROOT/kaggle/kernel-metadata.json.tmpl" > "$BUILD/kernel/kernel-metadata.json"

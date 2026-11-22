@@ -2,7 +2,7 @@ import torch
 
 from crs.compress.apply import compress_model, target_linears
 from crs.compress.kvcache import FakeQuantKVCache, fake_quant_lastdim, fake_quant_tokens
-from crs.compress.lowrank import svd_truncate
+from crs.compress.lowrank import asvd_truncate, svd_truncate
 from crs.compress.prune import magnitude_prune, wanda_prune
 from crs.compress.quant import fake_quant_rtn
 
@@ -85,3 +85,16 @@ def test_kv_cache_residual_window():
     assert all(ko[0, 0, :8, ch].unique().numel() <= 4 for ch in range(32))  # 2 bits per channel block
     ko, _ = c.update(torch.randn(1, 2, 6, 32), torch.randn(1, 2, 6, 32), 0)  # 36 tokens -> 3 blocks
     assert c.n_quant[0] == 24 and ko.shape[-2] == 36
+
+
+def test_asvd_rank_and_activation_weighting():
+    torch.manual_seed(0)
+    w = torch.randn(48, 64)
+    act = torch.ones(64)
+    act[:4] = 50.0  # a few input channels carry most of the activation
+    a = asvd_truncate(w, act, 0.5)
+    p = svd_truncate(w, 0.5)
+    assert torch.linalg.matrix_rank(a) == 24  # half of min(48, 64)
+    # ASVD protects the heavily used channels: smaller error where it matters
+    x = torch.randn(256, 64) * act
+    assert ((x @ (a - w).T).norm()) < ((x @ (p - w).T).norm())

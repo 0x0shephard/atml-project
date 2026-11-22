@@ -16,11 +16,13 @@ from torch import nn
 
 from ..config import ModelConfig, Setting, calibration
 from ..record import iter_records
-from .lowrank import svd_truncate
+from .lowrank import asvd_truncate, svd_truncate
 from .prune import collect_input_norms, magnitude_prune, wanda_prune
 from .quant import fake_quant_rtn
 
 log = logging.getLogger(__name__)
+
+NEEDS_CALIBRATION = {"wanda", "asvd"}
 
 
 def target_linears(model: nn.Module) -> dict[str, nn.Linear]:
@@ -53,9 +55,9 @@ def compress_model(model: nn.Module, spec: dict, calib: list[torch.Tensor] | Non
     method = spec["method"]
     linears = target_linears(model)
     norms = None
-    if method == "wanda":
+    if method in NEEDS_CALIBRATION:
         if calib is None:
-            raise ValueError("wanda needs calibration batches")
+            raise ValueError(f"{method} needs calibration batches")
         norms = collect_input_norms(model, linears, calib)
     rel_err, zeros, total = [], 0, 0
     for name, lin in linears.items():
@@ -69,6 +71,8 @@ def compress_model(model: nn.Module, spec: dict, calib: list[torch.Tensor] | Non
             new = wanda_prune(wf, norms[name], spec["sparsity"])  # type: ignore[index]
         elif method == "svd":
             new = svd_truncate(wf, spec["rank_frac"])
+        elif method == "asvd":
+            new = asvd_truncate(wf, norms[name], spec["rank_frac"], spec.get("alpha", 0.5))  # type: ignore[index]
         else:
             raise ValueError(f"unknown method {method}")
         rel_err.append(float((new - wf).norm() / wf.norm().clamp_min(1e-12)))
@@ -100,7 +104,7 @@ def build_checkpoint(model_cfg: ModelConfig, setting: Setting, out_root: Path, r
     tok = AutoTokenizer.from_pretrained(model_cfg.tokenizer_path)
     spec = dict(setting.weight)  # type: ignore[arg-type]
     calib = None
-    if spec["method"] == "wanda":
+    if spec["method"] in NEEDS_CALIBRATION:
         c = calibration()
         calib = calibration_batches(tok, model_cfg.key, results_dir, c.get("n_samples", 128), c.get("seq_len", 2048),
                                     c.get("source", "baseline_chains"))
