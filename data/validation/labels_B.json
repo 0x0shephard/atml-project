@@ -1,0 +1,1346 @@
+[
+ {
+  "item": 58,
+  "span": 0,
+  "label": "NO",
+  "confidence": "high",
+  "note": "fraction 1/30 inside hour conversion"
+ },
+ {
+  "item": 58,
+  "span": 1,
+  "label": "NO",
+  "confidence": "high",
+  "note": "1/16 of minutes, sub-step"
+ },
+ {
+  "item": 58,
+  "span": 2,
+  "label": "NO",
+  "confidence": "high",
+  "note": "addend in alternative computation"
+ },
+ {
+  "item": 59,
+  "span": 0,
+  "label": "YES",
+  "confidence": "high",
+  "note": "sheets per month stated"
+ },
+ {
+  "item": 59,
+  "span": 1,
+  "label": "YES",
+  "confidence": "high",
+  "note": "restates 240 as monthly answer"
+ },
+ {
+  "item": 59,
+  "span": 2,
+  "label": "YES",
+  "confidence": "high",
+  "note": "restates 240 as answer"
+ },
+ {
+  "item": 60,
+  "span": 0,
+  "label": "YES",
+  "confidence": "high",
+  "note": "sum a+b+c+d computed as 16"
+ },
+ {
+  "item": 60,
+  "span": 1,
+  "label": "YES",
+  "confidence": "low",
+  "note": "questions whether 16 is minimal; candidate answer"
+ },
+ {
+  "item": 60,
+  "span": 2,
+  "label": "YES",
+  "confidence": "low",
+  "note": "recalls candidate sum 16 for k=1"
+ },
+ {
+  "item": 61,
+  "span": 0,
+  "label": "NO",
+  "confidence": "high",
+  "note": "coefficient 25 in numeric root search"
+ },
+ {
+  "item": 61,
+  "span": 1,
+  "label": "NO",
+  "confidence": "high",
+  "note": "coefficient 25 in function evaluation"
+ },
+ {
+  "item": 61,
+  "span": 2,
+  "label": "NO",
+  "confidence": "high",
+  "note": "coefficient 25 in function evaluation"
+ },
+ {
+  "item": 62,
+  "span": 0,
+  "label": "YES",
+  "confidence": "low",
+  "note": "lawyer amount under alternative interpretation, then rejected"
+ },
+ {
+  "item": 63,
+  "span": 0,
+  "label": "YES",
+  "confidence": "high",
+  "note": "P=163, package size"
+ },
+ {
+  "item": 63,
+  "span": 1,
+  "label": "YES",
+  "confidence": "low",
+  "note": "unevaluated expression for P equals 163"
+ },
+ {
+  "item": 63,
+  "span": 2,
+  "label": "YES",
+  "confidence": "high",
+  "note": "P=163 restated"
+ },
+ {
+  "item": 64,
+  "span": 0,
+  "label": "NO",
+  "confidence": "high",
+  "note": "intermediate (42)/2 on way to 105"
+ },
+ {
+  "item": 64,
+  "span": 1,
+  "label": "NO",
+  "confidence": "high",
+  "note": "intermediate factor in 21*5"
+ },
+ {
+  "item": 64,
+  "span": 2,
+  "label": "NO",
+  "confidence": "high",
+  "note": "label coordinate in Asymptote"
+ },
+ {
+  "item": 65,
+  "span": 0,
+  "label": "NO",
+  "confidence": "high",
+  "note": "6! intermediate count"
+ },
+ {
+  "item": 65,
+  "span": 1,
+  "label": "YES",
+  "confidence": "high",
+  "note": "total number of ways 720"
+ },
+ {
+  "item": 65,
+  "span": 2,
+  "label": "NO",
+  "confidence": "low",
+  "note": "refers to prior 720 while favoring 90"
+ },
+ {
+  "item": 66,
+  "span": 0,
+  "label": "YES",
+  "confidence": "high",
+  "note": "total points 9"
+ },
+ {
+  "item": 66,
+  "span": 1,
+  "label": "YES",
+  "confidence": "high",
+  "note": "total points 9"
+ },
+ {
+  "item": 66,
+  "span": 2,
+  "label": "YES",
+  "confidence": "high",
+  "note": "total points 9"
+ },
+ {
+  "item": 67,
+  "span": 0,
+  "label": "NO",
+  "confidence": "high",
+  "note": "Sasha game-one score from problem"
+ },
+ {
+  "item": 68,
+  "span": 0,
+  "label": "NO",
+  "confidence": "high",
+  "note": "one pairwise sum equals zero, not answer"
+ },
+ {
+  "item": 69,
+  "span": 0,
+  "label": "NO",
+  "confidence": "low",
+  "note": "computation step 6+5 before x=11"
+ },
+ {
+  "item": 69,
+  "span": 1,
+  "label": "YES",
+  "confidence": "high",
+  "note": "x = 11 solved"
+ },
+ {
+  "item": 69,
+  "span": 2,
+  "label": "NO",
+  "confidence": "high",
+  "note": "plugging 11 to verify"
+ },
+ {
+  "item": 70,
+  "span": 0,
+  "label": "YES",
+  "confidence": "high",
+  "note": "sum of roots of g is 34"
+ },
+ {
+  "item": 70,
+  "span": 1,
+  "label": "YES",
+  "confidence": "high",
+  "note": "sum computed 34"
+ },
+ {
+  "item": 70,
+  "span": 2,
+  "label": "YES",
+  "confidence": "high",
+  "note": "sum of roots of g restated"
+ },
+ {
+  "item": 71,
+  "span": 0,
+  "label": "YES",
+  "confidence": "high",
+  "note": "total time 204 minutes"
+ },
+ {
+  "item": 71,
+  "span": 1,
+  "label": "YES",
+  "confidence": "high",
+  "note": "total time 204 minutes"
+ },
+ {
+  "item": 71,
+  "span": 2,
+  "label": "YES",
+  "confidence": "high",
+  "note": "total time 204 minutes"
+ },
+ {
+  "item": 72,
+  "span": 0,
+  "label": "NO",
+  "confidence": "high",
+  "note": "probability of two evens, different quantity"
+ },
+ {
+  "item": 72,
+  "span": 1,
+  "label": "YES",
+  "confidence": "low",
+  "note": "says A is 25% more likely"
+ },
+ {
+  "item": 73,
+  "span": 0,
+  "label": "NO",
+  "confidence": "high",
+  "note": "total bees left, different quantity"
+ },
+ {
+  "item": 73,
+  "span": 1,
+  "label": "NO",
+  "confidence": "high",
+  "note": "bees returned earlier, intermediate"
+ },
+ {
+  "item": 73,
+  "span": 2,
+  "label": "NO",
+  "confidence": "high",
+  "note": "intermediate in net change"
+ },
+ {
+  "item": 74,
+  "span": 0,
+  "label": "NO",
+  "confidence": "high",
+  "note": "total house height, different quantity"
+ },
+ {
+  "item": 74,
+  "span": 1,
+  "label": "NO",
+  "confidence": "high",
+  "note": "total house height, different quantity"
+ },
+ {
+  "item": 74,
+  "span": 2,
+  "label": "NO",
+  "confidence": "high",
+  "note": "total house height, different quantity"
+ },
+ {
+  "item": 75,
+  "span": 0,
+  "label": "YES",
+  "confidence": "high",
+  "note": "AB+B answer 12"
+ },
+ {
+  "item": 75,
+  "span": 1,
+  "label": "YES",
+  "confidence": "high",
+  "note": "AB+B answer 12"
+ },
+ {
+  "item": 75,
+  "span": 2,
+  "label": "YES",
+  "confidence": "high",
+  "note": "AB+B computed 12"
+ },
+ {
+  "item": 76,
+  "span": 0,
+  "label": "NO",
+  "confidence": "high",
+  "note": "5^1 value in computation"
+ },
+ {
+  "item": 76,
+  "span": 1,
+  "label": "NO",
+  "confidence": "high",
+  "note": "factor in 25x5"
+ },
+ {
+  "item": 76,
+  "span": 2,
+  "label": "NO",
+  "confidence": "high",
+  "note": "factor in 25x5"
+ },
+ {
+  "item": 77,
+  "span": 0,
+  "label": "YES",
+  "confidence": "high",
+  "note": "cost of 8 pens"
+ },
+ {
+  "item": 77,
+  "span": 1,
+  "label": "YES",
+  "confidence": "high",
+  "note": "8 pens cost $12"
+ },
+ {
+  "item": 77,
+  "span": 2,
+  "label": "YES",
+  "confidence": "high",
+  "note": "rechecked total for 8 pens"
+ },
+ {
+  "item": 78,
+  "span": 0,
+  "label": "NO",
+  "confidence": "high",
+  "note": "coordinate of F"
+ },
+ {
+  "item": 78,
+  "span": 1,
+  "label": "NO",
+  "confidence": "high",
+  "note": "coordinate of F"
+ },
+ {
+  "item": 78,
+  "span": 2,
+  "label": "NO",
+  "confidence": "high",
+  "note": "coordinate of F"
+ },
+ {
+  "item": 79,
+  "span": 0,
+  "label": "NO",
+  "confidence": "low",
+  "note": "Case 2 maximum, sub-case"
+ },
+ {
+  "item": 79,
+  "span": 1,
+  "label": "NO",
+  "confidence": "low",
+  "note": "Case 2 maximum, sub-case"
+ },
+ {
+  "item": 79,
+  "span": 2,
+  "label": "YES",
+  "confidence": "high",
+  "note": "overall maximum 13/4"
+ },
+ {
+  "item": 80,
+  "span": 0,
+  "label": "YES",
+  "confidence": "high",
+  "note": "range (2,inf)"
+ },
+ {
+  "item": 80,
+  "span": 1,
+  "label": "YES",
+  "confidence": "high",
+  "note": "set of values (2,inf)"
+ },
+ {
+  "item": 80,
+  "span": 2,
+  "label": "YES",
+  "confidence": "high",
+  "note": "set of values (2,inf)"
+ },
+ {
+  "item": 81,
+  "span": 0,
+  "label": "YES",
+  "confidence": "low",
+  "note": "limit of BD^2, the infimum candidate"
+ },
+ {
+  "item": 81,
+  "span": 1,
+  "label": "YES",
+  "confidence": "high",
+  "note": "BD^2 approaches but never below 480"
+ },
+ {
+  "item": 82,
+  "span": 0,
+  "label": "YES",
+  "confidence": "high",
+  "note": "double sum equals p-q"
+ },
+ {
+  "item": 82,
+  "span": 1,
+  "label": "YES",
+  "confidence": "high",
+  "note": "gives p-q as result"
+ },
+ {
+  "item": 82,
+  "span": 2,
+  "label": "YES",
+  "confidence": "high",
+  "note": "double sum is p-q"
+ },
+ {
+  "item": 83,
+  "span": 0,
+  "label": "NO",
+  "confidence": "high",
+  "note": "Kronecker delta index, unrelated"
+ },
+ {
+  "item": 84,
+  "span": 0,
+  "label": "NO",
+  "confidence": "high",
+  "note": "divisor term 25 in sigma sum"
+ },
+ {
+  "item": 84,
+  "span": 1,
+  "label": "NO",
+  "confidence": "high",
+  "note": "divisor term 25 in sigma sum"
+ },
+ {
+  "item": 84,
+  "span": 2,
+  "label": "NO",
+  "confidence": "high",
+  "note": "divisor term 25 in sigma sum"
+ },
+ {
+  "item": 85,
+  "span": 0,
+  "label": "YES",
+  "confidence": "high",
+  "note": "|a|+|b|+|c|=17, tentative max"
+ },
+ {
+  "item": 85,
+  "span": 1,
+  "label": "YES",
+  "confidence": "low",
+  "note": "candidate value 17 in case analysis"
+ },
+ {
+  "item": 85,
+  "span": 2,
+  "label": "YES",
+  "confidence": "low",
+  "note": "candidate value 17 in case analysis"
+ },
+ {
+  "item": 86,
+  "span": 0,
+  "label": "NO",
+  "confidence": "high",
+  "note": "0 mod 2 condition"
+ },
+ {
+  "item": 86,
+  "span": 1,
+  "label": "NO",
+  "confidence": "high",
+  "note": "0 mod 2 condition"
+ },
+ {
+  "item": 87,
+  "span": 0,
+  "label": "NO",
+  "confidence": "high",
+  "note": "listing primes between 30 and 50"
+ },
+ {
+  "item": 87,
+  "span": 1,
+  "label": "YES",
+  "confidence": "low",
+  "note": "proposes 41 or 47 as answer"
+ },
+ {
+  "item": 87,
+  "span": 2,
+  "label": "YES",
+  "confidence": "low",
+  "note": "41 among two candidate answers"
+ },
+ {
+  "item": 88,
+  "span": 0,
+  "label": "YES",
+  "confidence": "high",
+  "note": "marbles 7 from equations, then rejected"
+ },
+ {
+  "item": 89,
+  "span": 0,
+  "label": "YES",
+  "confidence": "high",
+  "note": "N=1440 found"
+ },
+ {
+  "item": 89,
+  "span": 1,
+  "label": "YES",
+  "confidence": "high",
+  "note": "largest N=1440"
+ },
+ {
+  "item": 89,
+  "span": 2,
+  "label": "YES",
+  "confidence": "low",
+  "note": "checking candidate 1440"
+ },
+ {
+  "item": 90,
+  "span": 0,
+  "label": "YES",
+  "confidence": "high",
+  "note": "x+y=17"
+ },
+ {
+  "item": 90,
+  "span": 1,
+  "label": "YES",
+  "confidence": "high",
+  "note": "x+y=17"
+ },
+ {
+  "item": 90,
+  "span": 2,
+  "label": "YES",
+  "confidence": "high",
+  "note": "x+y=17"
+ },
+ {
+  "item": 91,
+  "span": 0,
+  "label": "NO",
+  "confidence": "high",
+  "note": "19^2 for sqrt estimate"
+ },
+ {
+  "item": 92,
+  "span": 0,
+  "label": "YES",
+  "confidence": "low",
+  "note": "candidate |a_{n-1}|=14, then seeks smaller"
+ },
+ {
+  "item": 92,
+  "span": 1,
+  "label": "YES",
+  "confidence": "low",
+  "note": "candidate |a_{n-1}|=14, then seeks smaller"
+ },
+ {
+  "item": 93,
+  "span": 0,
+  "label": "YES",
+  "confidence": "high",
+  "note": "probability triangle exists 0.5"
+ },
+ {
+  "item": 93,
+  "span": 1,
+  "label": "NO",
+  "confidence": "low",
+  "note": "probability triangle does not exist"
+ },
+ {
+  "item": 94,
+  "span": 0,
+  "label": "NO",
+  "confidence": "high",
+  "note": "testing A=2 value"
+ },
+ {
+  "item": 94,
+  "span": 1,
+  "label": "NO",
+  "confidence": "high",
+  "note": "testing A=10 value"
+ },
+ {
+  "item": 94,
+  "span": 2,
+  "label": "NO",
+  "confidence": "high",
+  "note": "ln 25 inside test"
+ },
+ {
+  "item": 95,
+  "span": 0,
+  "label": "YES",
+  "confidence": "high",
+  "note": "remaining balance 220"
+ },
+ {
+  "item": 95,
+  "span": 1,
+  "label": "YES",
+  "confidence": "high",
+  "note": "still owes 220"
+ },
+ {
+  "item": 95,
+  "span": 2,
+  "label": "YES",
+  "confidence": "high",
+  "note": "remaining balance 220"
+ },
+ {
+  "item": 96,
+  "span": 0,
+  "label": "YES",
+  "confidence": "high",
+  "note": "tree weight 5600"
+ },
+ {
+  "item": 96,
+  "span": 1,
+  "label": "YES",
+  "confidence": "high",
+  "note": "weight 5600"
+ },
+ {
+  "item": 96,
+  "span": 2,
+  "label": "YES",
+  "confidence": "high",
+  "note": "tree weight 5600"
+ },
+ {
+  "item": 97,
+  "span": 0,
+  "label": "NO",
+  "confidence": "high",
+  "note": "probability of two evens"
+ },
+ {
+  "item": 97,
+  "span": 1,
+  "label": "NO",
+  "confidence": "low",
+  "note": "probability of second event, not answer"
+ },
+ {
+  "item": 97,
+  "span": 2,
+  "label": "NO",
+  "confidence": "low",
+  "note": "probability of second event, not answer"
+ },
+ {
+  "item": 98,
+  "span": 0,
+  "label": "NO",
+  "confidence": "low",
+  "note": "sum of two right angles, different angles"
+ },
+ {
+  "item": 98,
+  "span": 1,
+  "label": "NO",
+  "confidence": "low",
+  "note": "claims angle J is 180, different quantity"
+ },
+ {
+  "item": 99,
+  "span": 0,
+  "label": "YES",
+  "confidence": "low",
+  "note": "min BD^2 candidate 480"
+ },
+ {
+  "item": 99,
+  "span": 1,
+  "label": "YES",
+  "confidence": "low",
+  "note": "rechecked min BD^2 480"
+ },
+ {
+  "item": 99,
+  "span": 2,
+  "label": "YES",
+  "confidence": "high",
+  "note": "minimal BD^2 480, answer stated"
+ },
+ {
+  "item": 100,
+  "span": 0,
+  "label": "YES",
+  "confidence": "low",
+  "note": "second floor to roof 240"
+ },
+ {
+  "item": 100,
+  "span": 1,
+  "label": "YES",
+  "confidence": "high",
+  "note": "second floor height 240 = answer"
+ },
+ {
+  "item": 100,
+  "span": 2,
+  "label": "YES",
+  "confidence": "high",
+  "note": "second floor height 240 = answer"
+ },
+ {
+  "item": 101,
+  "span": 0,
+  "label": "NO",
+  "confidence": "high",
+  "note": "60-degree angle from problem"
+ },
+ {
+  "item": 101,
+  "span": 1,
+  "label": "NO",
+  "confidence": "high",
+  "note": "60-degree angle from problem"
+ },
+ {
+  "item": 102,
+  "span": 0,
+  "label": "YES",
+  "confidence": "high",
+  "note": "tentative minimal n is 6"
+ },
+ {
+  "item": 102,
+  "span": 1,
+  "label": "YES",
+  "confidence": "low",
+  "note": "asserts 6 minimal, candidate answer"
+ },
+ {
+  "item": 102,
+  "span": 2,
+  "label": "NO",
+  "confidence": "high",
+  "note": "names 6th roots of unity set"
+ },
+ {
+  "item": 103,
+  "span": 0,
+  "label": "NO",
+  "confidence": "high",
+  "note": "Friday count, not total"
+ },
+ {
+  "item": 103,
+  "span": 1,
+  "label": "NO",
+  "confidence": "high",
+  "note": "Friday count, not total"
+ },
+ {
+  "item": 104,
+  "span": 0,
+  "label": "YES",
+  "confidence": "high",
+  "note": "cos RPS = -24/25"
+ },
+ {
+  "item": 104,
+  "span": 1,
+  "label": "YES",
+  "confidence": "high",
+  "note": "cos RPS = -24/25"
+ },
+ {
+  "item": 104,
+  "span": 2,
+  "label": "YES",
+  "confidence": "high",
+  "note": "cos RPS = -24/25"
+ },
+ {
+  "item": 105,
+  "span": 0,
+  "label": "YES",
+  "confidence": "high",
+  "note": "total time 50 minutes"
+ },
+ {
+  "item": 105,
+  "span": 1,
+  "label": "YES",
+  "confidence": "high",
+  "note": "total time 50 minutes"
+ },
+ {
+  "item": 105,
+  "span": 2,
+  "label": "YES",
+  "confidence": "high",
+  "note": "total time 50 minutes"
+ },
+ {
+  "item": 106,
+  "span": 0,
+  "label": "NO",
+  "confidence": "high",
+  "note": "N+1 value in enumeration"
+ },
+ {
+  "item": 106,
+  "span": 1,
+  "label": "NO",
+  "confidence": "high",
+  "note": "listing primes, rejected"
+ },
+ {
+  "item": 106,
+  "span": 2,
+  "label": "NO",
+  "confidence": "high",
+  "note": "listing primes, rejected"
+ },
+ {
+  "item": 107,
+  "span": 0,
+  "label": "YES",
+  "confidence": "high",
+  "note": "set of values (2,inf)"
+ },
+ {
+  "item": 107,
+  "span": 1,
+  "label": "YES",
+  "confidence": "high",
+  "note": "set of values (2,inf)"
+ },
+ {
+  "item": 107,
+  "span": 2,
+  "label": "YES",
+  "confidence": "high",
+  "note": "set of values (2,inf)"
+ },
+ {
+  "item": 108,
+  "span": 0,
+  "label": "NO",
+  "confidence": "high",
+  "note": "exponent in scientific notation"
+ },
+ {
+  "item": 109,
+  "span": 0,
+  "label": "NO",
+  "confidence": "high",
+  "note": "illustrative guest count example"
+ },
+ {
+  "item": 109,
+  "span": 1,
+  "label": "NO",
+  "confidence": "high",
+  "note": "illustrative guest count example"
+ },
+ {
+  "item": 110,
+  "span": 0,
+  "label": "YES",
+  "confidence": "high",
+  "note": "total arrangements 10080"
+ },
+ {
+  "item": 111,
+  "span": 0,
+  "label": "NO",
+  "confidence": "high",
+  "note": "36 as 468/13 in computation"
+ },
+ {
+  "item": 111,
+  "span": 1,
+  "label": "NO",
+  "confidence": "high",
+  "note": "36 as 468/13 in computation"
+ },
+ {
+  "item": 111,
+  "span": 2,
+  "label": "NO",
+  "confidence": "high",
+  "note": "numerator in computation"
+ },
+ {
+  "item": 112,
+  "span": 0,
+  "label": "YES",
+  "confidence": "high",
+  "note": "8!/4 = 10080 as arrangements, then doubted"
+ },
+ {
+  "item": 113,
+  "span": 0,
+  "label": "YES",
+  "confidence": "high",
+  "note": "product xy = 25"
+ },
+ {
+  "item": 113,
+  "span": 1,
+  "label": "YES",
+  "confidence": "high",
+  "note": "xy = 25 restated"
+ },
+ {
+  "item": 113,
+  "span": 2,
+  "label": "NO",
+  "confidence": "high",
+  "note": "plugging y=25 to test"
+ },
+ {
+  "item": 114,
+  "span": 0,
+  "label": "YES",
+  "confidence": "high",
+  "note": "f(3)=8"
+ },
+ {
+  "item": 114,
+  "span": 1,
+  "label": "YES",
+  "confidence": "high",
+  "note": "f(3)=8"
+ },
+ {
+  "item": 114,
+  "span": 2,
+  "label": "NO",
+  "confidence": "high",
+  "note": "computed f(-3)=8, different quantity"
+ },
+ {
+  "item": 115,
+  "span": 0,
+  "label": "NO",
+  "confidence": "high",
+  "note": "floor value example"
+ },
+ {
+  "item": 115,
+  "span": 1,
+  "label": "YES",
+  "confidence": "high",
+  "note": "largest x is 6"
+ },
+ {
+  "item": 115,
+  "span": 2,
+  "label": "NO",
+  "confidence": "high",
+  "note": "evaluating f at 6 to verify"
+ },
+ {
+  "item": 116,
+  "span": 0,
+  "label": "NO",
+  "confidence": "low",
+  "note": "one of five candidate primes"
+ },
+ {
+  "item": 116,
+  "span": 1,
+  "label": "NO",
+  "confidence": "low",
+  "note": "one of five candidate primes"
+ },
+ {
+  "item": 116,
+  "span": 2,
+  "label": "NO",
+  "confidence": "low",
+  "note": "one of five candidate primes"
+ },
+ {
+  "item": 0,
+  "span": 0,
+  "label": "YES",
+  "confidence": "high",
+  "note": "240 sheets restated in loop"
+ },
+ {
+  "item": 0,
+  "span": 1,
+  "label": "YES",
+  "confidence": "high",
+  "note": "240 sheets restated in loop"
+ },
+ {
+  "item": 0,
+  "span": 2,
+  "label": "YES",
+  "confidence": "high",
+  "note": "240 sheets restated in loop"
+ },
+ {
+  "item": 1,
+  "span": 0,
+  "label": "YES",
+  "confidence": "high",
+  "note": "interior points 63"
+ },
+ {
+  "item": 1,
+  "span": 1,
+  "label": "YES",
+  "confidence": "high",
+  "note": "strictly inside count 63"
+ },
+ {
+  "item": 1,
+  "span": 2,
+  "label": "YES",
+  "confidence": "high",
+  "note": "recheck gives 63"
+ },
+ {
+  "item": 2,
+  "span": 0,
+  "label": "YES",
+  "confidence": "high",
+  "note": "loser got 20, tentative"
+ },
+ {
+  "item": 2,
+  "span": 1,
+  "label": "YES",
+  "confidence": "high",
+  "note": "loser got 20"
+ },
+ {
+  "item": 2,
+  "span": 2,
+  "label": "YES",
+  "confidence": "high",
+  "note": "loser got 20 votes"
+ },
+ {
+  "item": 3,
+  "span": 0,
+  "label": "NO",
+  "confidence": "high",
+  "note": "total flamingos, different quantity"
+ },
+ {
+  "item": 4,
+  "span": 0,
+  "label": "NO",
+  "confidence": "high",
+  "note": "label coordinate"
+ },
+ {
+  "item": 4,
+  "span": 1,
+  "label": "NO",
+  "confidence": "high",
+  "note": "intermediate factor in 21*9"
+ },
+ {
+  "item": 4,
+  "span": 2,
+  "label": "NO",
+  "confidence": "high",
+  "note": "intermediate factor in 21*9"
+ },
+ {
+  "item": 5,
+  "span": 0,
+  "label": "YES",
+  "confidence": "high",
+  "note": "total earnings 42"
+ },
+ {
+  "item": 5,
+  "span": 1,
+  "label": "YES",
+  "confidence": "high",
+  "note": "total earnings 42"
+ },
+ {
+  "item": 5,
+  "span": 2,
+  "label": "YES",
+  "confidence": "high",
+  "note": "total is $42"
+ },
+ {
+  "item": 6,
+  "span": 0,
+  "label": "YES",
+  "confidence": "high",
+  "note": "tentative answer 8!/4"
+ },
+ {
+  "item": 6,
+  "span": 1,
+  "label": "YES",
+  "confidence": "high",
+  "note": "8!/4 = 10080 candidate answer"
+ },
+ {
+  "item": 7,
+  "span": 0,
+  "label": "NO",
+  "confidence": "high",
+  "note": "ln 25 in derivation"
+ },
+ {
+  "item": 7,
+  "span": 1,
+  "label": "NO",
+  "confidence": "high",
+  "note": "ln 25 in derivation"
+ },
+ {
+  "item": 7,
+  "span": 2,
+  "label": "NO",
+  "confidence": "high",
+  "note": "ln 25 in derivation"
+ },
+ {
+  "item": 8,
+  "span": 0,
+  "label": "YES",
+  "confidence": "high",
+  "note": "8!/4 = 10080 arrangements candidate"
+ },
+ {
+  "item": 9,
+  "span": 0,
+  "label": "YES",
+  "confidence": "high",
+  "note": "sin T = sqrt21/5"
+ },
+ {
+  "item": 9,
+  "span": 1,
+  "label": "YES",
+  "confidence": "high",
+  "note": "sin T = sqrt21/5"
+ },
+ {
+  "item": 9,
+  "span": 2,
+  "label": "YES",
+  "confidence": "high",
+  "note": "sin T = sqrt21/5"
+ },
+ {
+  "item": 10,
+  "span": 0,
+  "label": "YES",
+  "confidence": "high",
+  "note": "DE = sqrt51"
+ },
+ {
+  "item": 10,
+  "span": 1,
+  "label": "YES",
+  "confidence": "high",
+  "note": "DE = sqrt51"
+ },
+ {
+  "item": 10,
+  "span": 2,
+  "label": "NO",
+  "confidence": "high",
+  "note": "EF, different side"
+ },
+ {
+  "item": 11,
+  "span": 0,
+  "label": "NO",
+  "confidence": "high",
+  "note": "inner composition f(g(x)) parity"
+ },
+ {
+  "item": 11,
+  "span": 1,
+  "label": "NO",
+  "confidence": "high",
+  "note": "inner composition parity"
+ },
+ {
+  "item": 11,
+  "span": 2,
+  "label": "NO",
+  "confidence": "high",
+  "note": "inner composition parity"
+ },
+ {
+  "item": 12,
+  "span": 0,
+  "label": "YES",
+  "confidence": "high",
+  "note": "56 Drinkets = 6 Trinkets"
+ },
+ {
+  "item": 12,
+  "span": 1,
+  "label": "YES",
+  "confidence": "high",
+  "note": "56 Drinkets = 6 Trinkets"
+ },
+ {
+  "item": 12,
+  "span": 2,
+  "label": "YES",
+  "confidence": "high",
+  "note": "correct answer is 6"
+ },
+ {
+  "item": 13,
+  "span": 0,
+  "label": "YES",
+  "confidence": "high",
+  "note": "sum = 16"
+ },
+ {
+  "item": 13,
+  "span": 1,
+  "label": "YES",
+  "confidence": "high",
+  "note": "sum is 16"
+ },
+ {
+  "item": 14,
+  "span": 0,
+  "label": "NO",
+  "confidence": "high",
+  "note": "divisor listing"
+ },
+ {
+  "item": 14,
+  "span": 1,
+  "label": "NO",
+  "confidence": "high",
+  "note": "divisor listing"
+ },
+ {
+  "item": 14,
+  "span": 2,
+  "label": "NO",
+  "confidence": "high",
+  "note": "sigma term 25"
+ },
+ {
+  "item": 15,
+  "span": 0,
+  "label": "NO",
+  "confidence": "high",
+  "note": "60-degree angle from problem"
+ },
+ {
+  "item": 15,
+  "span": 1,
+  "label": "NO",
+  "confidence": "high",
+  "note": "angle from problem"
+ },
+ {
+  "item": 15,
+  "span": 2,
+  "label": "NO",
+  "confidence": "high",
+  "note": "angle from problem"
+ }
+]

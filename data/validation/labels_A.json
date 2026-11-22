@@ -1,0 +1,1094 @@
+[
+ {
+  "item": 0,
+  "span": 0,
+  "label": "YES",
+  "confidence": "low",
+  "note": "Looping restatement of 240 as monthly total"
+ },
+ {
+  "item": 0,
+  "span": 1,
+  "label": "YES",
+  "confidence": "low",
+  "note": "Looping restatement of 240 as monthly total"
+ },
+ {
+  "item": 0,
+  "span": 2,
+  "label": "YES",
+  "confidence": "low",
+  "note": "Looping restatement of 240 as monthly total"
+ },
+ {
+  "item": 1,
+  "span": 0,
+  "label": "YES",
+  "confidence": "high",
+  "note": "Total interior points 9*7=63"
+ },
+ {
+  "item": 1,
+  "span": 1,
+  "label": "YES",
+  "confidence": "high",
+  "note": "Therefore strictly inside count is 63"
+ },
+ {
+  "item": 1,
+  "span": 2,
+  "label": "YES",
+  "confidence": "high",
+  "note": "Double-check reaffirms 63 as answer"
+ },
+ {
+  "item": 2,
+  "span": 0,
+  "label": "YES",
+  "confidence": "high",
+  "note": "Tentatively loser got 20"
+ },
+ {
+  "item": 2,
+  "span": 1,
+  "label": "YES",
+  "confidence": "high",
+  "note": "Loser got 80-60=20"
+ },
+ {
+  "item": 2,
+  "span": 2,
+  "label": "YES",
+  "confidence": "high",
+  "note": "Therefore the loser got 20 votes"
+ },
+ {
+  "item": 3,
+  "span": 0,
+  "label": "NO",
+  "confidence": "high",
+  "note": "24 is total flamingos Saturday, not difference"
+ },
+ {
+  "item": 4,
+  "span": 0,
+  "label": "NO",
+  "confidence": "high",
+  "note": "Coordinate in Asymptote label"
+ },
+ {
+  "item": 4,
+  "span": 1,
+  "label": "NO",
+  "confidence": "high",
+  "note": "Intermediate 42/2 on way to 189"
+ },
+ {
+  "item": 4,
+  "span": 2,
+  "label": "NO",
+  "confidence": "high",
+  "note": "Intermediate 42/2 on way to 189"
+ },
+ {
+  "item": 5,
+  "span": 0,
+  "label": "YES",
+  "confidence": "high",
+  "note": "Total earnings 30+12=42"
+ },
+ {
+  "item": 5,
+  "span": 1,
+  "label": "YES",
+  "confidence": "high",
+  "note": "Recomputed total 42"
+ },
+ {
+  "item": 5,
+  "span": 2,
+  "label": "YES",
+  "confidence": "high",
+  "note": "Total is $42"
+ },
+ {
+  "item": 6,
+  "span": 0,
+  "label": "YES",
+  "confidence": "high",
+  "note": "Tentative answer 8!/4 equals 10080"
+ },
+ {
+  "item": 6,
+  "span": 1,
+  "label": "YES",
+  "confidence": "high",
+  "note": "Tentative answer 40320/4=10080"
+ },
+ {
+  "item": 7,
+  "span": 0,
+  "label": "NO",
+  "confidence": "high",
+  "note": "25 inside ln(25), intermediate"
+ },
+ {
+  "item": 7,
+  "span": 1,
+  "label": "NO",
+  "confidence": "high",
+  "note": "25 inside ln(25), intermediate"
+ },
+ {
+  "item": 7,
+  "span": 2,
+  "label": "NO",
+  "confidence": "high",
+  "note": "25 inside ln(25), intermediate"
+ },
+ {
+  "item": 8,
+  "span": 0,
+  "label": "YES",
+  "confidence": "high",
+  "note": "Distinct arrangements 40320/4=10080"
+ },
+ {
+  "item": 9,
+  "span": 0,
+  "label": "YES",
+  "confidence": "high",
+  "note": "sin T = sqrt(21)/5"
+ },
+ {
+  "item": 9,
+  "span": 1,
+  "label": "YES",
+  "confidence": "high",
+  "note": "sin T = sqrt(21)/5"
+ },
+ {
+  "item": 9,
+  "span": 2,
+  "label": "YES",
+  "confidence": "high",
+  "note": "sin T = sqrt(21)/5"
+ },
+ {
+  "item": 10,
+  "span": 0,
+  "label": "YES",
+  "confidence": "high",
+  "note": "DE is sqrt(51)"
+ },
+ {
+  "item": 10,
+  "span": 1,
+  "label": "YES",
+  "confidence": "high",
+  "note": "DE is sqrt(51)"
+ },
+ {
+  "item": 10,
+  "span": 2,
+  "label": "NO",
+  "confidence": "high",
+  "note": "sqrt(51) assigned to EF, different side"
+ },
+ {
+  "item": 11,
+  "span": 0,
+  "label": "NO",
+  "confidence": "high",
+  "note": "Inner composition f(g(x)) even, sub-step"
+ },
+ {
+  "item": 11,
+  "span": 1,
+  "label": "NO",
+  "confidence": "high",
+  "note": "k(x) even, sub-step"
+ },
+ {
+  "item": 11,
+  "span": 2,
+  "label": "NO",
+  "confidence": "high",
+  "note": "f(f(g(x))) even, sub-step"
+ },
+ {
+  "item": 12,
+  "span": 0,
+  "label": "YES",
+  "confidence": "high",
+  "note": "56 Drinkets equals 6 Trinkets"
+ },
+ {
+  "item": 12,
+  "span": 1,
+  "label": "YES",
+  "confidence": "high",
+  "note": "56 Drinkets equals 6 Trinkets"
+ },
+ {
+  "item": 12,
+  "span": 2,
+  "label": "YES",
+  "confidence": "high",
+  "note": "56 Drinkets equals 6 Trinkets"
+ },
+ {
+  "item": 13,
+  "span": 0,
+  "label": "YES",
+  "confidence": "high",
+  "note": "Candidate minimal sum a+b+c+d=16"
+ },
+ {
+  "item": 13,
+  "span": 1,
+  "label": "YES",
+  "confidence": "high",
+  "note": "Valid solution, sum is 16"
+ },
+ {
+  "item": 14,
+  "span": 0,
+  "label": "NO",
+  "confidence": "high",
+  "note": "25 is a divisor of 500, intermediate"
+ },
+ {
+  "item": 14,
+  "span": 1,
+  "label": "NO",
+  "confidence": "high",
+  "note": "25 is a divisor of 500, intermediate"
+ },
+ {
+  "item": 14,
+  "span": 2,
+  "label": "NO",
+  "confidence": "high",
+  "note": "25 is a divisor of 500, intermediate"
+ },
+ {
+  "item": 15,
+  "span": 0,
+  "label": "NO",
+  "confidence": "high",
+  "note": "60 is given angle"
+ },
+ {
+  "item": 15,
+  "span": 1,
+  "label": "NO",
+  "confidence": "high",
+  "note": "60 is given angle"
+ },
+ {
+  "item": 15,
+  "span": 2,
+  "label": "NO",
+  "confidence": "high",
+  "note": "60 is given angle"
+ },
+ {
+  "item": 16,
+  "span": 0,
+  "label": "YES",
+  "confidence": "high",
+  "note": "Total friends 50+70=120"
+ },
+ {
+  "item": 16,
+  "span": 1,
+  "label": "YES",
+  "confidence": "high",
+  "note": "Total friends 50+70=120"
+ },
+ {
+  "item": 16,
+  "span": 2,
+  "label": "YES",
+  "confidence": "high",
+  "note": "Total friends 50+70=120"
+ },
+ {
+  "item": 17,
+  "span": 0,
+  "label": "NO",
+  "confidence": "high",
+  "note": "Restates condition sum equals 0"
+ },
+ {
+  "item": 18,
+  "span": 0,
+  "label": "YES",
+  "confidence": "high",
+  "note": "alpha = 145 degrees"
+ },
+ {
+  "item": 18,
+  "span": 1,
+  "label": "NO",
+  "confidence": "low",
+  "note": "Central angle of arc CD, doubted"
+ },
+ {
+  "item": 18,
+  "span": 2,
+  "label": "YES",
+  "confidence": "high",
+  "note": "alpha = 360-105-110 = 145"
+ },
+ {
+  "item": 19,
+  "span": 0,
+  "label": "NO",
+  "confidence": "high",
+  "note": "Sub-step claim (a+b)(c+d)=0"
+ },
+ {
+  "item": 19,
+  "span": 1,
+  "label": "NO",
+  "confidence": "high",
+  "note": "Triangle inequality lower bound 0"
+ },
+ {
+  "item": 20,
+  "span": 0,
+  "label": "NO",
+  "confidence": "high",
+  "note": "60 is given angle"
+ },
+ {
+  "item": 20,
+  "span": 1,
+  "label": "NO",
+  "confidence": "high",
+  "note": "60 is given angle"
+ },
+ {
+  "item": 20,
+  "span": 2,
+  "label": "NO",
+  "confidence": "high",
+  "note": "60 is given angle"
+ },
+ {
+  "item": 21,
+  "span": 0,
+  "label": "NO",
+  "confidence": "high",
+  "note": "360 minutes, time not reports"
+ },
+ {
+  "item": 21,
+  "span": 1,
+  "label": "NO",
+  "confidence": "high",
+  "note": "360 minutes, time not reports"
+ },
+ {
+  "item": 21,
+  "span": 2,
+  "label": "NO",
+  "confidence": "high",
+  "note": "360 minutes, time not reports"
+ },
+ {
+  "item": 22,
+  "span": 0,
+  "label": "YES",
+  "confidence": "high",
+  "note": "xy = 25 derived"
+ },
+ {
+  "item": 22,
+  "span": 1,
+  "label": "YES",
+  "confidence": "high",
+  "note": "xy = 25 derived"
+ },
+ {
+  "item": 22,
+  "span": 2,
+  "label": "YES",
+  "confidence": "high",
+  "note": "xy = 25 derived"
+ },
+ {
+  "item": 23,
+  "span": 0,
+  "label": "YES",
+  "confidence": "low",
+  "note": "Count of coprime pairs m<n, maps to answer"
+ },
+ {
+  "item": 23,
+  "span": 1,
+  "label": "NO",
+  "confidence": "low",
+  "note": "8 treated as ordered pairs to be halved"
+ },
+ {
+  "item": 23,
+  "span": 2,
+  "label": "NO",
+  "confidence": "high",
+  "note": "8 unordered pairs, intermediate"
+ },
+ {
+  "item": 24,
+  "span": 0,
+  "label": "YES",
+  "confidence": "high",
+  "note": "Product mod 1000 is 321"
+ },
+ {
+  "item": 24,
+  "span": 1,
+  "label": "YES",
+  "confidence": "high",
+  "note": "Confirms remainder 321"
+ },
+ {
+  "item": 24,
+  "span": 2,
+  "label": "YES",
+  "confidence": "high",
+  "note": "Therefore the remainder is 321"
+ },
+ {
+  "item": 25,
+  "span": 0,
+  "label": "NO",
+  "confidence": "high",
+  "note": "Coefficient 6 copied from problem"
+ },
+ {
+  "item": 25,
+  "span": 1,
+  "label": "NO",
+  "confidence": "high",
+  "note": "Coefficient 6 copied from problem"
+ },
+ {
+  "item": 25,
+  "span": 2,
+  "label": "NO",
+  "confidence": "high",
+  "note": "Coefficient 6 copied from problem"
+ },
+ {
+  "item": 26,
+  "span": 0,
+  "label": "YES",
+  "confidence": "high",
+  "note": "m+n = 237"
+ },
+ {
+  "item": 27,
+  "span": 0,
+  "label": "YES",
+  "confidence": "high",
+  "note": "Sum of valid n is 49"
+ },
+ {
+  "item": 27,
+  "span": 1,
+  "label": "YES",
+  "confidence": "high",
+  "note": "Sum of valid n is 49"
+ },
+ {
+  "item": 27,
+  "span": 2,
+  "label": "YES",
+  "confidence": "high",
+  "note": "Sum of valid n is 49"
+ },
+ {
+  "item": 28,
+  "span": 0,
+  "label": "NO",
+  "confidence": "high",
+  "note": "Divisor 16 in arithmetic step"
+ },
+ {
+  "item": 28,
+  "span": 1,
+  "label": "NO",
+  "confidence": "high",
+  "note": "Divisor 16 in arithmetic step"
+ },
+ {
+  "item": 28,
+  "span": 2,
+  "label": "NO",
+  "confidence": "high",
+  "note": "Divisor 16 in arithmetic step"
+ },
+ {
+  "item": 29,
+  "span": 0,
+  "label": "NO",
+  "confidence": "high",
+  "note": "6 inside polynomial computation"
+ },
+ {
+  "item": 29,
+  "span": 1,
+  "label": "NO",
+  "confidence": "high",
+  "note": "6 inside polynomial computation"
+ },
+ {
+  "item": 29,
+  "span": 2,
+  "label": "NO",
+  "confidence": "high",
+  "note": "6 inside polynomial computation"
+ },
+ {
+  "item": 30,
+  "span": 0,
+  "label": "NO",
+  "confidence": "high",
+  "note": "336 is 2*168, intermediate term"
+ },
+ {
+  "item": 30,
+  "span": 1,
+  "label": "NO",
+  "confidence": "high",
+  "note": "336 is 2*168, intermediate term"
+ },
+ {
+  "item": 30,
+  "span": 2,
+  "label": "NO",
+  "confidence": "high",
+  "note": "336 is 2*168, intermediate term"
+ },
+ {
+  "item": 31,
+  "span": 0,
+  "label": "YES",
+  "confidence": "high",
+  "note": "Number of nickels n=7"
+ },
+ {
+  "item": 31,
+  "span": 1,
+  "label": "YES",
+  "confidence": "high",
+  "note": "Number of nickels n=7"
+ },
+ {
+  "item": 31,
+  "span": 2,
+  "label": "YES",
+  "confidence": "high",
+  "note": "Number of nickels n=7"
+ },
+ {
+  "item": 32,
+  "span": 0,
+  "label": "YES",
+  "confidence": "low",
+  "note": "General rule 1^anything=1 implies answer"
+ },
+ {
+  "item": 32,
+  "span": 1,
+  "label": "NO",
+  "confidence": "low",
+  "note": "Marked 1 is the base, not result"
+ },
+ {
+  "item": 32,
+  "span": 2,
+  "label": "YES",
+  "confidence": "low",
+  "note": "Rule 1^anything is 1, applied to answer"
+ },
+ {
+  "item": 33,
+  "span": 0,
+  "label": "NO",
+  "confidence": "high",
+  "note": "-331 + f(1), intermediate"
+ },
+ {
+  "item": 34,
+  "span": 0,
+  "label": "YES",
+  "confidence": "high",
+  "note": "Girls 160-60=100"
+ },
+ {
+  "item": 34,
+  "span": 1,
+  "label": "YES",
+  "confidence": "high",
+  "note": "Tentative answer 100"
+ },
+ {
+  "item": 34,
+  "span": 2,
+  "label": "YES",
+  "confidence": "high",
+  "note": "Girls on Chinese team 100"
+ },
+ {
+  "item": 35,
+  "span": 0,
+  "label": "YES",
+  "confidence": "high",
+  "note": "10 guests make costs equal"
+ },
+ {
+  "item": 35,
+  "span": 1,
+  "label": "YES",
+  "confidence": "high",
+  "note": "10 guests make costs equal"
+ },
+ {
+  "item": 35,
+  "span": 2,
+  "label": "YES",
+  "confidence": "high",
+  "note": "10 guests make costs equal"
+ },
+ {
+  "item": 36,
+  "span": 0,
+  "label": "YES",
+  "confidence": "low",
+  "note": "Candidate list sum of squares 236"
+ },
+ {
+  "item": 37,
+  "span": 0,
+  "label": "YES",
+  "confidence": "high",
+  "note": "Goes up to 18th floor"
+ },
+ {
+  "item": 37,
+  "span": 1,
+  "label": "YES",
+  "confidence": "high",
+  "note": "Ends on 18th floor"
+ },
+ {
+  "item": 37,
+  "span": 2,
+  "label": "YES",
+  "confidence": "high",
+  "note": "Ends up on 18th floor"
+ },
+ {
+  "item": 38,
+  "span": 0,
+  "label": "NO",
+  "confidence": "high",
+  "note": "28 arises from 56/2, intermediate"
+ },
+ {
+  "item": 38,
+  "span": 1,
+  "label": "NO",
+  "confidence": "high",
+  "note": "28 arises from 56/2, intermediate"
+ },
+ {
+  "item": 38,
+  "span": 2,
+  "label": "NO",
+  "confidence": "high",
+  "note": "28 arises from 56/2, intermediate"
+ },
+ {
+  "item": 39,
+  "span": 0,
+  "label": "NO",
+  "confidence": "high",
+  "note": "8 is factor in 15*8"
+ },
+ {
+  "item": 40,
+  "span": 0,
+  "label": "NO",
+  "confidence": "low",
+  "note": "Referencing p-q for numeric check"
+ },
+ {
+  "item": 40,
+  "span": 1,
+  "label": "YES",
+  "confidence": "high",
+  "note": "Maybe double sum equals p - q"
+ },
+ {
+  "item": 40,
+  "span": 2,
+  "label": "YES",
+  "confidence": "high",
+  "note": "Derived double sum = p - q"
+ },
+ {
+  "item": 41,
+  "span": 0,
+  "label": "NO",
+  "confidence": "high",
+  "note": "20 is total time, not sightseeing"
+ },
+ {
+  "item": 41,
+  "span": 1,
+  "label": "NO",
+  "confidence": "high",
+  "note": "20 is total time, not sightseeing"
+ },
+ {
+  "item": 41,
+  "span": 2,
+  "label": "NO",
+  "confidence": "high",
+  "note": "20 is total time, not sightseeing"
+ },
+ {
+  "item": 42,
+  "span": 0,
+  "label": "NO",
+  "confidence": "high",
+  "note": "Exponent 3 in discriminant formula"
+ },
+ {
+  "item": 42,
+  "span": 1,
+  "label": "NO",
+  "confidence": "high",
+  "note": "Exponent 3 in discriminant formula"
+ },
+ {
+  "item": 42,
+  "span": 2,
+  "label": "NO",
+  "confidence": "high",
+  "note": "Exponent 3 in discriminant formula"
+ },
+ {
+  "item": 43,
+  "span": 0,
+  "label": "NO",
+  "confidence": "low",
+  "note": "35/64 attributed to coefficient a"
+ },
+ {
+  "item": 43,
+  "span": 1,
+  "label": "YES",
+  "confidence": "low",
+  "note": "Coefficient of sin x, i.e. d"
+ },
+ {
+  "item": 43,
+  "span": 2,
+  "label": "YES",
+  "confidence": "low",
+  "note": "35/64 as sin x coefficient d"
+ },
+ {
+  "item": 44,
+  "span": 0,
+  "label": "YES",
+  "confidence": "high",
+  "note": "Number of possible B values is 2"
+ },
+ {
+  "item": 44,
+  "span": 1,
+  "label": "YES",
+  "confidence": "high",
+  "note": "Number of possible B values is 2"
+ },
+ {
+  "item": 44,
+  "span": 2,
+  "label": "YES",
+  "confidence": "high",
+  "note": "Number of possible B values is 2"
+ },
+ {
+  "item": 45,
+  "span": 0,
+  "label": "YES",
+  "confidence": "high",
+  "note": "Remainder 3 is n"
+ },
+ {
+  "item": 45,
+  "span": 1,
+  "label": "YES",
+  "confidence": "high",
+  "note": "120 mod 9 is 3"
+ },
+ {
+  "item": 45,
+  "span": 2,
+  "label": "YES",
+  "confidence": "high",
+  "note": "120 mod 9 is 3"
+ },
+ {
+  "item": 46,
+  "span": 0,
+  "label": "YES",
+  "confidence": "high",
+  "note": "Total people 320"
+ },
+ {
+  "item": 46,
+  "span": 1,
+  "label": "YES",
+  "confidence": "low",
+  "note": "Total as sum expression equal 320"
+ },
+ {
+  "item": 46,
+  "span": 2,
+  "label": "YES",
+  "confidence": "high",
+  "note": "Total people entered is 320"
+ },
+ {
+  "item": 47,
+  "span": 0,
+  "label": "NO",
+  "confidence": "high",
+  "note": "203.5 is non-integer y, not answer"
+ },
+ {
+  "item": 47,
+  "span": 1,
+  "label": "NO",
+  "confidence": "high",
+  "note": "203.5 is non-integer y, not answer"
+ },
+ {
+  "item": 47,
+  "span": 2,
+  "label": "NO",
+  "confidence": "high",
+  "note": "203.5 is non-integer y, not answer"
+ },
+ {
+  "item": 48,
+  "span": 0,
+  "label": "NO",
+  "confidence": "high",
+  "note": "80 yards per lap, not difference"
+ },
+ {
+  "item": 48,
+  "span": 1,
+  "label": "NO",
+  "confidence": "high",
+  "note": "80 yards per lap, not difference"
+ },
+ {
+  "item": 48,
+  "span": 2,
+  "label": "NO",
+  "confidence": "high",
+  "note": "80 yards per lap, not difference"
+ },
+ {
+  "item": 49,
+  "span": 0,
+  "label": "YES",
+  "confidence": "high",
+  "note": "Total quadratics 6"
+ },
+ {
+  "item": 49,
+  "span": 1,
+  "label": "YES",
+  "confidence": "high",
+  "note": "Total quadratics 6"
+ },
+ {
+  "item": 49,
+  "span": 2,
+  "label": "YES",
+  "confidence": "high",
+  "note": "Total quadratics 6"
+ },
+ {
+  "item": 50,
+  "span": 0,
+  "label": "YES",
+  "confidence": "low",
+  "note": "New floor 4*3+6, equivalent to 18"
+ },
+ {
+  "item": 50,
+  "span": 1,
+  "label": "YES",
+  "confidence": "high",
+  "note": "4*3+6 equals 18, new floor"
+ },
+ {
+  "item": 50,
+  "span": 2,
+  "label": "YES",
+  "confidence": "high",
+  "note": "Bill ends on 18th floor"
+ },
+ {
+  "item": 51,
+  "span": 0,
+  "label": "NO",
+  "confidence": "high",
+  "note": "117 is intermediate before subtracting overlap"
+ },
+ {
+  "item": 51,
+  "span": 1,
+  "label": "NO",
+  "confidence": "high",
+  "note": "117 is intermediate before subtracting overlap"
+ },
+ {
+  "item": 51,
+  "span": 2,
+  "label": "NO",
+  "confidence": "high",
+  "note": "117 is intermediate before subtracting overlap"
+ },
+ {
+  "item": 52,
+  "span": 0,
+  "label": "NO",
+  "confidence": "high",
+  "note": "List index 16"
+ },
+ {
+  "item": 52,
+  "span": 1,
+  "label": "NO",
+  "confidence": "high",
+  "note": "List index 16"
+ },
+ {
+  "item": 53,
+  "span": 0,
+  "label": "YES",
+  "confidence": "high",
+  "note": "Minimal rate 0.10 is 10%"
+ },
+ {
+  "item": 53,
+  "span": 1,
+  "label": "NO",
+  "confidence": "high",
+  "note": "Comparing 0.099 to 10%, favors 9.9"
+ },
+ {
+  "item": 53,
+  "span": 2,
+  "label": "NO",
+  "confidence": "high",
+  "note": "10.24 under square root"
+ },
+ {
+  "item": 54,
+  "span": 0,
+  "label": "YES",
+  "confidence": "high",
+  "note": "Product equals 1/16"
+ },
+ {
+  "item": 54,
+  "span": 1,
+  "label": "YES",
+  "confidence": "high",
+  "note": "Product equals 1/16"
+ },
+ {
+  "item": 54,
+  "span": 2,
+  "label": "YES",
+  "confidence": "high",
+  "note": "Product equals 1/16"
+ },
+ {
+  "item": 55,
+  "span": 0,
+  "label": "YES",
+  "confidence": "high",
+  "note": "Sum |a|+|b|+|c| = 17 candidate max"
+ },
+ {
+  "item": 55,
+  "span": 1,
+  "label": "YES",
+  "confidence": "high",
+  "note": "Sum |a|+|b|+|c| = 17 candidate max"
+ },
+ {
+  "item": 55,
+  "span": 2,
+  "label": "YES",
+  "confidence": "high",
+  "note": "Sum |a|+|b|+|c| = 17 candidate max"
+ },
+ {
+  "item": 56,
+  "span": 0,
+  "label": "NO",
+  "confidence": "high",
+  "note": "80 yards per lap, not difference"
+ },
+ {
+  "item": 56,
+  "span": 1,
+  "label": "NO",
+  "confidence": "high",
+  "note": "80 yards per lap, not difference"
+ },
+ {
+  "item": 56,
+  "span": 2,
+  "label": "NO",
+  "confidence": "high",
+  "note": "80 yards per lap, not difference"
+ },
+ {
+  "item": 57,
+  "span": 0,
+  "label": "NO",
+  "confidence": "high",
+  "note": "60 is given angle"
+ },
+ {
+  "item": 57,
+  "span": 1,
+  "label": "NO",
+  "confidence": "high",
+  "note": "60 is given angle"
+ },
+ {
+  "item": 57,
+  "span": 2,
+  "label": "NO",
+  "confidence": "high",
+  "note": "60 is given angle"
+ }
+]

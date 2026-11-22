@@ -57,3 +57,16 @@ def test_numeric_conclusion_hit(tok):
     assert s["had_correct_scan"] and not s["had_correct_strict"]
     assert s["first_correct_kind"] == "conclusion"
     assert s["first_correct_token"] > 0
+
+
+def test_conclusion_repeating_a_given_value_is_dropped(tok):
+    """Conclusion hits that repeat a number given in the problem are dropped. This is a
+    trade-off: here angle B really is 60, and that hit is lost too. In the 2026-11-22
+    validation the rule removed 23 false conclusion spans and lost 1 real one of 141."""
+    problem = "In triangle ABC, angle A is 60 degrees and AB = AC. Find angle B."
+    think = "Since AB = AC the triangle is isosceles.\nTherefore angle A is 60.\nSo angle B is 60."
+    assert scan(think, "60", tok)["n_correct_candidates"] == 2
+    s = scan(think, "60", tok, problem=problem)
+    assert not s["had_correct_scan"]
+    # a value not in the problem is still found
+    assert scan("So the answer is 75.", "75", tok, problem=problem)["had_correct_scan"]

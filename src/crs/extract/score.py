@@ -36,10 +36,10 @@ def outcome(correct: bool, had_correct: bool, truncated: bool = False) -> str:
     return "commit_fail" if had_correct else "never_correct"
 
 
-def score_record(rec: dict, tokenizer=None) -> dict:  # noqa: ANN001
+def score_record(rec: dict, tokenizer=None, problem: str | None = None) -> dict:  # noqa: ANN001
     pred = final_answer(rec["answer_text"])
     correct = is_equiv(pred, rec["gold"])
-    sc = scan(rec["think_text"], rec["gold"], tokenizer)
+    sc = scan(rec["think_text"], rec["gold"], tokenizer, problem=problem)
     row = {k: v for k, v in rec.items() if k not in TEXT_FIELDS}
     row.update(sc)
     trunc = is_truncated(rec, pred is not None)
@@ -57,7 +57,11 @@ def score_record(rec: dict, tokenizer=None) -> dict:  # noqa: ANN001
     return row
 
 
-def score_run(run: Path, tokenizer=None, records_name: str = "records.jsonl", out_name: str = "scored.jsonl") -> list[dict]:  # noqa: ANN001
-    rows = [score_record(r, tokenizer) for r in iter_records(run, records_name)]
+def score_run(run: Path, tokenizer=None, records_name: str = "records.jsonl", out_name: str = "scored.jsonl",  # noqa: ANN001
+              problems: dict[str, str] | None = None) -> list[dict]:
+    """``problems`` maps problem id -> statement; with it, conclusion hits that only repeat a
+    value from the statement are ignored (see ``reasoning_scan``)."""
+    problems = problems or {}
+    rows = [score_record(r, tokenizer, problems.get(r["problem_id"])) for r in iter_records(run, records_name)]
     write_records(run, rows, out_name)
     return rows

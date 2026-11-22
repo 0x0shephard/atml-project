@@ -215,17 +215,19 @@ def budget_run(model_key: str, setting: str, fix: str, samples: int = 1, budgets
     return rd
 
 
-def score_runs(runs: list[Path]) -> None:
+def score_runs(runs: list[Path], problems_file: Path | None = None) -> None:
     from .extract.score import score_run
 
+    pf = problems_file or data.PROBLEMS_FILE
+    statements = {p["id"]: p["problem"] for p in data.load(pf)} if pf.exists() else {}
     for run in runs:
         recs = list(iter_records(run))
         if not recs:
             continue
         tok = load_tokenizer(config.models()[recs[0]["model"]].tokenizer_path)
-        rows = score_run(run, tok)
+        rows = score_run(run, tok, problems=statements)
         for f in sorted(run.glob("budget_*.jsonl")):
-            score_run(run, tok, f.name, "scored_" + f.name)
+            score_run(run, tok, f.name, "scored_" + f.name, problems=statements)
         acc = sum(r["correct"] for r in rows) / max(len(rows), 1)
         cf = sum(r["outcome"] == "commit_fail" for r in rows) / max(len(rows), 1)
         print(f"{run}: n={len(rows)} acc={acc:.3f} commit_fail={cf:.3f}")

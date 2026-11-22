@@ -10,6 +10,12 @@ against the gold answer. Candidates are tagged by how strong a commitment they a
 
 Hits are confirmed by the judge model (``crs.extract.judge``) and a 10% manual check,
 since an intermediate quantity can equal the final answer by coincidence.
+
+Validation (2026-11-22, 306 hand-labelled spans from 117 failed chains, ``data/validation/``):
+``boxed``/``answer_is`` hits were always real, but only 67% of ``conclusion`` hits were. A
+third of the false ones repeated a value given in the problem ("the angle is 60 degrees"),
+so a ``conclusion`` hit whose value appears in the problem statement is dropped when the
+problem text is passed in. That removed 23 of 69 false conclusion spans and 1 of 141 real ones.
 """
 
 from __future__ import annotations
@@ -42,7 +48,14 @@ def _numeric(gold: str) -> float | None:
         return None
 
 
-def candidates(think: str, gold: str) -> list[Hit]:
+def _in_text(value: str, text: str) -> bool:
+    v = value.strip().strip("$").replace(",", "").strip()
+    if not v:
+        return False
+    return re.search(rf"(?<![\d.]){re.escape(v)}(?![\d])", text.replace(",", "")) is not None
+
+
+def candidates(think: str, gold: str, problem: str | None = None) -> list[Hit]:
     out: list[Hit] = []
     for s, _e, content in boxed_spans(think):
         out.append(Hit(s, "boxed", content))
@@ -66,6 +79,8 @@ def candidates(think: str, gold: str) -> list[Hit]:
                         break
                 except ValueError:
                     continue
+    if problem:
+        out = [h for h in out if not (h.kind == "conclusion" and _in_text(h.text, problem))]
     out.sort(key=lambda h: h.char)
     return out
 
@@ -77,8 +92,8 @@ def char_to_token(think: str, tokenizer) -> callable:  # noqa: ANN001
     return lambda c: max(0, bisect.bisect_right(starts, c) - 1)
 
 
-def scan(think: str, gold: str, tokenizer=None, max_hits: int = 20) -> dict:  # noqa: ANN001
-    cands = candidates(think, gold)
+def scan(think: str, gold: str, tokenizer=None, max_hits: int = 20, problem: str | None = None) -> dict:  # noqa: ANN001
+    cands = candidates(think, gold, problem)
     correct = [h for h in cands if is_equiv(h.text, gold)]
     if tokenizer is not None and correct:
         c2t = char_to_token(think, tokenizer)
