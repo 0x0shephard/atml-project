@@ -3,6 +3,7 @@ __pycache__/
 *.pyc
 .pytest_cache/
 results/
+results-*/
 results_kaggle/
 reports/
 build/

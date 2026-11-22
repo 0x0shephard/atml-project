@@ -1,0 +1,26 @@
+# Length-limit test (planned 2026-11-22). R1 only.
+#
+# Lotfi et al. (arXiv 2606.00206) find that "had the right answer, then dropped it" rises from
+# 26% to 52% of errors under 3-bit quantization. We match their full-precision 26%, but under
+# RTN W3 our share stays at about 18% (data/validation/). Our 8,192-token limit is the suspect:
+# 41% of W3 chains are cut off, while Lotfi's AWQ W3 chains average 23K tokens.
+#
+#  1. long-math: the full-precision and W3 models on the 200 MATH-500 problems with a 32,768-token
+#     limit, written to results-32k/. If the limit is the cause, the W3 share should rise there.
+#  2. forced: forced answers at 512 ... 8,192 tokens for the finished 360-problem runs. The
+#     8,192 step says how many cut-off chains already held the right answer (it never ran for
+#     these: the calibration session ran out of time).
+# Longest jobs first so both GPUs finish around the same time.
+groups:
+  - name: long-math
+    models: [r1-1.5b]
+    settings: [rtn-w3-g128, base]
+    fix: none
+    max_tokens: 32768
+    problems: problems_math500.jsonl
+    results: results-32k
+
+  - name: forced
+    kind: budget
+    models: [r1-1.5b]
+    settings: [rtn-w3-g128, base, wanda-50, wanda-30, rtn-w4-g128]

@@ -59,7 +59,10 @@ def unpack_dirs(root: str, names: list[str]) -> None:
 def job_name(job: dict) -> str:
     if job.get("kind") == "bench":
         return f"bench__{job['model']}__{job['attn']}__c{job['concurrency']}"
-    return f"{job['model']}__{job['setting']}__{job['fix']}__n{job['samples']}"
+    if job.get("kind") == "budget":
+        return f"budget__{job['model']}__{job['setting']}"
+    name = f"{job['model']}__{job['setting']}__{job['fix']}__n{job['samples']}"
+    return f"{name}__{job['results']}" if job.get("results") else name
 
 
 def main() -> None:
@@ -142,10 +145,16 @@ def main() -> None:
                 cmd = [sys.executable, "-m", "crs.run", "bench", "--model", job["model"], "--attn", job["attn"],
                        "--concurrency", str(job["concurrency"]), "--gen-tokens", str(job["gen_tokens"]),
                        "--results", RESULTS, "--ckpt-dir", ck]
+            elif job.get("kind") == "budget":
+                cmd = [sys.executable, "-m", "crs.run", "budget", "--model", job["model"], "--setting", job["setting"],
+                       "--fix", "none", "--results", RESULTS, "--ckpt-dir", ck]
             else:
                 cmd = [sys.executable, "-m", "crs.run", "gen", "--model", job["model"], "--setting", job["setting"],
-                       "--fix", job["fix"], "--samples", str(job["samples"]), "--results", RESULTS, "--ckpt-dir", ck,
-                       *extra, *(["--limit", str(job["limit"])] if job.get("limit") else [])]
+                       "--fix", job["fix"], "--samples", str(job["samples"]),
+                       "--results", f"{WORK}/{job.get('results', 'results')}", "--ckpt-dir", ck, *extra,
+                       *(["--limit", str(job["limit"])] if job.get("limit") else []),
+                       *(["--max-tokens", str(job["max_tokens"])] if job.get("max_tokens") else []),
+                       *(["--problems", f"data/{job['problems']}"] if job.get("problems") else [])]
             log = open(f"{LOGS}/{name}.log", "a")
             print(f"[{hours:.2f} h] GPU{gpu}: {name}", flush=True)
             running[gpu] = (subprocess.Popen(cmd, cwd=code, env={**env, "CUDA_VISIBLE_DEVICES": str(gpu)},
@@ -163,10 +172,13 @@ def main() -> None:
     # forced answers at each thinking budget (incl. the 8,192 cut-off) for the no-fix,
     # single-sample runs that have chains, first those that finished this session
     seen, todo = set(), []
+    # (runs in a separate results folder, e.g. a longer length limit, are skipped, and so are runs
+    # whose forced answers already exist, e.g. from a `kind: budget` job this session)
     for job in [j for j in status if j.get("kind", "gen") == "gen"] + [j for j in jobs if j.get("kind", "gen") == "gen"]:
         key = (job["model"], job["setting"])
-        if job["fix"] == "none" and job["samples"] == 1 and key not in seen \
-                and os.path.exists(f"{RESULTS}/{job['model']}/{job['setting']}/none/records.jsonl"):
+        rd = f"{RESULTS}/{job['model']}/{job['setting']}/none"
+        if job["fix"] == "none" and job["samples"] == 1 and key not in seen and not job.get("results") \
+                and os.path.exists(f"{rd}/records.jsonl") and not os.path.exists(f"{rd}/budget_8192.jsonl"):
             seen.add(key)
             todo.append(job)
     for job in todo:

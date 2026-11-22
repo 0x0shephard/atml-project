@@ -109,3 +109,21 @@ def test_group_limit(tmp_path):
                  "  - {name: b, models: [r1-1.5b], settings: [kv-int4], fix: none}\n")
     jobs, extra = expand_jobs(f)
     assert jobs[0]["limit"] == 7 and "limit" not in jobs[1] and extra == {}
+
+
+def test_cutoff_jobs_expand(tmp_path):
+    from crs import config
+
+    jobs, extra = expand_jobs(config.CONFIG_DIR / "cutoff.yaml")
+    gen = [j for j in jobs if j["kind"] == "gen"]
+    budget = [j for j in jobs if j["kind"] == "budget"]
+    assert [j["setting"] for j in gen] == ["rtn-w3-g128", "base"]
+    assert all(j["max_tokens"] == 32768 and j["results"] == "results-32k" for j in gen)
+    assert all((config.CONFIG_DIR.parent / "data" / j["problems"]).exists() for j in gen)
+    assert len(budget) == 5 and all(j["fix"] == "none" and "results" not in j for j in budget)
+    assert extra == {}
+    # a longer length limit must not share a results folder with the 8,192-token runs
+    f = tmp_path / "bad.yaml"
+    f.write_text("groups:\n  - {name: x, models: [r1-1.5b], settings: [base], fix: none, max_tokens: 16384}\n")
+    with pytest.raises(ValueError, match="results"):
+        expand_jobs(f)

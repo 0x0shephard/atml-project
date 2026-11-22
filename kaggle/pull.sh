@@ -9,9 +9,13 @@ OUT="$ROOT/build/kaggle_output"
 rm -rf "$OUT" && mkdir -p "$OUT"
 kaggle kernels status "$KUSER/crs-run"
 # only our outputs: an unfiltered pull fetches every runtime file and can hit a long 429
-kaggle kernels output "$KUSER/crs-run" -p "$OUT" --file-pattern '^(results/|logs/|status\.json)'
-mkdir -p "$ROOT/results"
-# kernel output = restored results + new chunks, so it supersedes the local copy
-rsync -a "$OUT/results/" "$ROOT/results/"
+kaggle kernels output "$KUSER/crs-run" -p "$OUT" --file-pattern '^(results[^/]*/|logs/|status\.json)'
+# kernel output = restored results + new chunks, so it supersedes the local copy. Runs with a
+# longer length limit come back in their own folder (e.g. results-32k/) and stay separate here too.
+for d in "$OUT"/results*/; do
+  [ -d "$d" ] || continue
+  mkdir -p "$ROOT/$(basename "$d")"
+  rsync -a "$d" "$ROOT/$(basename "$d")/"
+done
 [ -f "$OUT/status.json" ] && cp "$OUT/status.json" "$ROOT/results/last_kaggle_status.json"
 echo "merged into $ROOT/results"

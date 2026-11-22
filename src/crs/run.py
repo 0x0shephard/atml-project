@@ -245,6 +245,12 @@ def expand_jobs(spec_file: str | Path) -> tuple[list[dict[str, Any]], dict[str, 
                         jobs.append({"group": g["name"], "kind": "bench", "model": m, "attn": attn, "concurrency": c,
                                      "gen_tokens": b["gen_tokens"], "timeout_min": b.get("timeout_min")})
             continue
+        if g.get("kind") == "budget":  # forced answers at every budget for finished no-fix runs
+            for m in g["models"]:
+                for s in g["settings"]:
+                    jobs.append({"group": g["name"], "kind": "budget", "model": m, "setting": s, "fix": "none",
+                                 "samples": 1})
+            continue
         fixes = g.get("fixes") or [g.get("fix", "none")]
         for fix in fixes:
             for m in g["models"]:
@@ -253,6 +259,13 @@ def expand_jobs(spec_file: str | Path) -> tuple[list[dict[str, Any]], dict[str, 
                            "samples": g.get("samples", 1)}
                     if g.get("limit"):  # per-group problem limit (first N problems), overrides the file's
                         job["limit"] = g["limit"]
+                    # per-group length limit, problem file (under data/) and results folder; a run with
+                    # another max_tokens needs its own results folder (resume guard in generate_run)
+                    for k in ("max_tokens", "problems", "results"):
+                        if g.get(k):
+                            job[k] = g[k]
+                    if "max_tokens" in job and "results" not in job:
+                        raise ValueError(f"group {g['name']}: max_tokens needs its own `results` folder")
                     jobs.append(job)
     extra = {k: spec[k] for k in ("limit", "max_tokens") if k in spec}
     return jobs, extra
