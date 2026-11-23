@@ -1,0 +1,33 @@
+# Length-limit test, second session (planned 2026-11-23). R1 only, MATH-500 (200 problems).
+#
+# In the first session (configs/cutoff.yaml) the from-scratch W3 run at 32,768 tokens saved
+# nothing: it never finished its first 180-problem chunk in 5.5 h. Here the finished 8,192-token
+# runs are extended instead: chains that ended on their own are kept, and only chains cut off
+# at 8,192 are continued to 32,768 (crs.run extend), saved every 20 chains. Results go to
+# results-32k-ext/.
+#
+# base is extended too, and compared with the from-scratch base run in results-32k/, to check
+# that extending gives the same accuracy and "had it, then dropped it" share as a fresh run.
+groups:
+  - name: extend-key
+    kind: extend
+    models: [r1-1.5b]
+    settings: [rtn-w3-g128, base]
+    max_tokens: 32768
+    problems: problems_math500.jsonl
+    results: results-32k-ext
+    chunk_size: 20
+
+  - name: extend-more
+    kind: extend
+    models: [r1-1.5b]
+    settings: [wanda-50, rtn-w4-g128]
+    max_tokens: 32768
+    problems: problems_math500.jsonl
+    results: results-32k-ext
+    chunk_size: 20
+
+  - name: forced-left
+    kind: budget
+    models: [r1-1.5b]
+    settings: [rtn-w4-g128]

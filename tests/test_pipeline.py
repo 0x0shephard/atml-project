@@ -127,3 +127,42 @@ def test_cutoff_jobs_expand(tmp_path):
     f.write_text("groups:\n  - {name: x, models: [r1-1.5b], settings: [base], fix: none, max_tokens: 16384}\n")
     with pytest.raises(ValueError, match="results"):
         expand_jobs(f)
+
+
+def test_extend_continues_cut_off_chains(tmp_path, tok, problems_file):
+    import json
+
+    from crs.run import extend_run
+
+    short, long = tmp_path / "results", tmp_path / "results-long"
+    be = HFBackend(model=make_tiny(tok), tokenizer=tok, dtype="float32", batch_size=2, device="cpu")
+    src = generate_run("tiny", "base", "none", limit=3, max_tokens=12, results=short, backend=be,
+                       problems_file=problems_file)
+    recs = list(iter_records(src))
+    # mark one chain as having stopped on its own, so it must be copied, not continued
+    recs[0]["finish_reason"] = "stop"
+    (src / "records.jsonl").write_text("".join(json.dumps(r) + "\n" for r in recs))
+    cut = [r for r in recs if r["finish_reason"] == "length"]
+    assert cut, "the tiny model should run into the 12-token limit"
+
+    rd = extend_run("tiny", "base", 30, short, long, chunk_size=1, backend=be, problems_file=problems_file)
+    new = {r["problem_id"]: r for r in iter_records(rd)}
+    assert set(new) == {r["problem_id"] for r in recs}
+    old_a = load_arrays(src, recs)
+    new_a = load_arrays(rd, new.values())
+    for r in recs:
+        o, n = old_a[r["rid"]], new_a[new[r["problem_id"]]["rid"]]
+        assert len(n["ids"]) == len(n["lp"]) == len(n["ent"]) == new[r["problem_id"]]["n_tokens"]
+        if r["finish_reason"] == "stop":
+            assert np.array_equal(o["ids"], n["ids"]) and "extended_from" not in new[r["problem_id"]]
+        else:  # continued: starts with the old chain, ran on past the old limit
+            assert np.array_equal(o["ids"], n["ids"][:len(o["ids"])])
+            assert np.allclose(o["lp"].astype(np.float32), n["lp"][:len(o["lp"])].astype(np.float32), atol=1e-2)
+            assert 12 < len(n["ids"]) <= 30 and new[r["problem_id"]]["extended_from"] == 12
+    # resume: nothing left; a different limit in the same folder is refused; never extend in place
+    extend_run("tiny", "base", 30, short, long, backend=be, problems_file=problems_file)
+    assert len(list(iter_records(rd))) == len(recs)
+    with pytest.raises(ValueError, match="max_tokens"):
+        extend_run("tiny", "base", 40, short, long, backend=be, problems_file=problems_file)
+    with pytest.raises(ValueError, match="different results folder"):
+        extend_run("tiny", "base", 30, short, short, backend=be, problems_file=problems_file)

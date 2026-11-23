@@ -61,6 +61,8 @@ def job_name(job: dict) -> str:
         return f"bench__{job['model']}__{job['attn']}__c{job['concurrency']}"
     if job.get("kind") == "budget":
         return f"budget__{job['model']}__{job['setting']}"
+    if job.get("kind") == "extend":
+        return f"extend__{job['model']}__{job['setting']}__{job['results']}"
     name = f"{job['model']}__{job['setting']}__{job['fix']}__n{job['samples']}"
     return f"{name}__{job['results']}" if job.get("results") else name
 
@@ -145,6 +147,11 @@ def main() -> None:
                 cmd = [sys.executable, "-m", "crs.run", "bench", "--model", job["model"], "--attn", job["attn"],
                        "--concurrency", str(job["concurrency"]), "--gen-tokens", str(job["gen_tokens"]),
                        "--results", RESULTS, "--ckpt-dir", ck]
+            elif job.get("kind") == "extend":
+                cmd = [sys.executable, "-m", "crs.run", "extend", "--model", job["model"], "--setting", job["setting"],
+                       "--max-tokens", str(job["max_tokens"]), "--from-results", RESULTS,
+                       "--results", f"{WORK}/{job['results']}", "--chunk-size", str(job["chunk_size"]),
+                       "--ckpt-dir", ck, *(["--problems", f"data/{job['problems']}"] if job.get("problems") else [])]
             elif job.get("kind") == "budget":
                 cmd = [sys.executable, "-m", "crs.run", "budget", "--model", job["model"], "--setting", job["setting"],
                        "--fix", "none", "--results", RESULTS, "--ckpt-dir", ck]
@@ -154,7 +161,8 @@ def main() -> None:
                        "--results", f"{WORK}/{job.get('results', 'results')}", "--ckpt-dir", ck, *extra,
                        *(["--limit", str(job["limit"])] if job.get("limit") else []),
                        *(["--max-tokens", str(job["max_tokens"])] if job.get("max_tokens") else []),
-                       *(["--problems", f"data/{job['problems']}"] if job.get("problems") else [])]
+                       *(["--problems", f"data/{job['problems']}"] if job.get("problems") else []),
+                       *(["--chunk-size", str(job["chunk_size"])] if job.get("chunk_size") else [])]
             log = open(f"{LOGS}/{name}.log", "a")
             print(f"[{hours:.2f} h] GPU{gpu}: {name}", flush=True)
             running[gpu] = (subprocess.Popen(cmd, cwd=code, env={**env, "CUDA_VISIBLE_DEVICES": str(gpu)},

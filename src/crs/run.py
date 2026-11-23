@@ -28,7 +28,7 @@ from .backends.base import Backend, DecodeSpec, make_backend
 from .decoding.budget import FORCED_MAX_TOKENS, budget_record, forced_prompt, needs_forcing
 from .decoding.penalties import expand_wordlist, logit_bias, read_wordlist
 from .prompts import load_tokenizer, prompt_ids, token_info
-from .record import RunWriter, build_record, iter_records, load_arrays, run_dir, write_records
+from .record import GenResult, RunWriter, build_record, iter_records, load_arrays, run_dir, write_records
 
 log = logging.getLogger("crs")
 
@@ -120,7 +120,7 @@ def bench_run(model_key: str, attention_backend: str, concurrency: int, gen_toke
 def generate_run(model_key: str, setting: str, fix: str, samples: int = 1, limit: int | None = None,
                  max_tokens: int | None = None, shard: tuple[int, int] = (0, 1), results: Path = DEFAULT_RESULTS,
                  ckpt_dir: Path = DEFAULT_CKPT, backend: Backend | None = None, backend_kind: str | None = None,
-                 problems_file: Path | None = None) -> Path:
+                 problems_file: Path | None = None, chunk_size: int | None = None) -> Path:
     mcfg = config.models()[model_key]
     gd = config.generation_defaults()
     max_tokens = max_tokens or gd["max_tokens"]
@@ -153,7 +153,7 @@ def generate_run(model_key: str, setting: str, fix: str, samples: int = 1, limit
 
     t_start, n_tok, n_nonfinite = time.time(), 0, 0
     kind = backend_kind or config.settings()[setting].backend
-    chunk = gd.get("chunk_size_hf", gd["chunk_size"]) if kind == "hf" else gd["chunk_size"]
+    chunk = chunk_size or (gd.get("chunk_size_hf", gd["chunk_size"]) if kind == "hf" else gd["chunk_size"])
     for c in range(0, len(todo), chunk):
         batch = todo[c:c + chunk]
         spec.seeds = [stable_seed(gd["seed"], p["id"]) for p in batch]
@@ -180,6 +180,87 @@ def generate_run(model_key: str, setting: str, fix: str, samples: int = 1, limit
     if n_nonfinite:
         log.warning("%d records had non-finite logprobs: check fp16 numerics (models.yaml dtype)", n_nonfinite)
     if own_backend:
+        backend.close()
+    return rd
+
+
+def extend_run(model_key: str, setting: str, max_tokens: int, from_results: Path, results: Path,
+               chunk_size: int = 20, ckpt_dir: Path = DEFAULT_CKPT, backend: Backend | None = None,
+               problems_file: Path | None = None) -> Path:
+    """Rerun a finished no-fix run with a longer length limit by continuing its cut-off chains.
+
+    A chain that ended before the old limit is copied unchanged. A chain cut off at the old
+    limit is continued from its last token (same sampling settings, a fresh seed) until it
+    stops or reaches ``max_tokens`` in total. Sampling is token by token, so a continued chain
+    is a draw from the same distribution as a chain generated with the longer limit from the
+    start, and it stays paired with the short-limit chain it extends. Unlike a fresh run,
+    this keeps every token already generated.
+    """
+    mcfg = config.models()[model_key]
+    gd = config.generation_defaults()
+    src = run_dir(from_results, model_key, setting, "none")
+    rd = run_dir(results, model_key, setting, "none")
+    if rd.resolve() == src.resolve():
+        raise ValueError("extend needs a different results folder from the run it extends")
+    meta_file = rd / "meta.json"
+    if meta_file.exists():
+        old = {s.get("max_tokens") for s in json.loads(meta_file.read_text()).get("sessions", [])}
+        if old - {max_tokens}:
+            raise ValueError(f"{rd} holds results with max_tokens={sorted(old)}, not {max_tokens}")
+    wanted = {p["id"] for p in data.load(problems_file or data.PROBLEMS_FILE)}
+    probs = {p["id"]: p for p in data.load(data.PROBLEMS_FILE)}
+    if problems_file:
+        probs.update({p["id"]: p for p in data.load(problems_file)})
+    srcs = [r for r in iter_records(src) if r["problem_id"] in wanted and r["sample_idx"] == 0]
+    writer = RunWriter(rd)
+    done = writer.done()
+    srcs = [r for r in srcs if r["problem_id"] not in done]
+    arrs = load_arrays(src, srcs)
+    keep = [r for r in srcs if r["finish_reason"] != "length"]
+    cont = [r for r in srcs if r["finish_reason"] == "length" and r["n_tokens"] < max_tokens]
+    log.info("%s: %d chains to copy, %d to continue (to %d tokens)", rd, len(keep), len(cont), max_tokens)
+    tok = load_tokenizer(mcfg.tokenizer_path)
+    hand = expand_wordlist(read_wordlist("handwritten"), tok)
+    tinfo = token_info(mcfg, tok, set(hand.token_ids))
+
+    def as_gen(r: dict) -> GenResult:
+        a = arrs[r["rid"]]
+        return GenResult(a["ids"].tolist(), a.get("lp"), a.get("ent"), r["finish_reason"])
+
+    if keep:  # copied chains keep their original arrays; the record is rebuilt so the fields match
+        out = [build_record(probs[r["problem_id"]], model_key, setting, "none", 0, as_gen(r), tok, tinfo) for r in keep]
+        writer.write_chunk([o[0] for o in out], [o[1] for o in out])
+    own = backend is None
+    if cont and backend is None:
+        backend = open_backend(model_key, setting, max_tokens + 2048, from_results, ckpt_dir)
+    t_start, n_new = time.time(), 0
+    for c in range(0, len(cont), chunk_size):
+        batch = cont[c:c + chunk_size]
+        olds = [as_gen(r) for r in batch]
+        prompts = [prompt_ids(probs[r["problem_id"]], mcfg, tok) + g.token_ids for r, g in zip(batch, olds)]
+        # every continued chain has the same room left only if the old ones all hit the same
+        # limit, which they did (they were cut off); take the room of the longest to be safe
+        spec = decode_spec(model_key, "none", tok, max_tokens - max(len(g.token_ids) for g in olds), 1)
+        spec.seeds = [stable_seed(gd["seed"] + 1, r["problem_id"]) for r in batch]
+        t0 = time.time()
+        outs = backend.generate(prompts, spec)
+        recs, out_arrs = [], []
+        for r, g, o in zip(batch, olds, outs):
+            new = o[0]
+            n_new += len(new.token_ids)
+            cat = lambda a, b: None if a is None or b is None else np.concatenate([np.asarray(a, np.float32), np.asarray(b, np.float32)])  # noqa: E731
+            merged = GenResult(g.token_ids + list(new.token_ids), cat(g.logprobs, new.logprobs),
+                               cat(g.entropy, new.entropy), new.finish_reason)
+            rec, a = build_record(probs[r["problem_id"]], model_key, setting, "none", 0, merged, tok, tinfo)
+            rec["extended_from"] = r["n_tokens"]
+            recs.append(rec)
+            out_arrs.append(a)
+        writer.write_chunk(recs, out_arrs)
+        log.info("chunk %d: %d continued chains, %.0f s", c // chunk_size, len(recs), time.time() - t0)
+    writer.write_meta({"model": model_key, "setting": setting, "fix": "none", "samples": 1, "max_tokens": max_tokens,
+                       "extended_from": str(src), "n_copied": len(keep), "n_continued": len(cont),
+                       "new_tokens": n_new, "seconds": time.time() - t_start})
+    if own and backend is not None:
         backend.close()
     return rd
 
@@ -245,6 +326,16 @@ def expand_jobs(spec_file: str | Path) -> tuple[list[dict[str, Any]], dict[str, 
                         jobs.append({"group": g["name"], "kind": "bench", "model": m, "attn": attn, "concurrency": c,
                                      "gen_tokens": b["gen_tokens"], "timeout_min": b.get("timeout_min")})
             continue
+        if g.get("kind") == "extend":  # continue the cut-off chains of finished runs to a longer limit
+            for m in g["models"]:
+                for s in g["settings"]:
+                    job = {"group": g["name"], "kind": "extend", "model": m, "setting": s, "fix": "none",
+                           "samples": 1, "max_tokens": g["max_tokens"], "results": g["results"],
+                           "chunk_size": g.get("chunk_size", 20)}
+                    if g.get("problems"):
+                        job["problems"] = g["problems"]
+                    jobs.append(job)
+            continue
         if g.get("kind") == "budget":  # forced answers at every budget for finished no-fix runs
             for m in g["models"]:
                 for s in g["settings"]:
@@ -261,7 +352,7 @@ def expand_jobs(spec_file: str | Path) -> tuple[list[dict[str, Any]], dict[str, 
                         job["limit"] = g["limit"]
                     # per-group length limit, problem file (under data/) and results folder; a run with
                     # another max_tokens needs its own results folder (resume guard in generate_run)
-                    for k in ("max_tokens", "problems", "results"):
+                    for k in ("max_tokens", "problems", "results", "chunk_size"):
                         if g.get(k):
                             job[k] = g[k]
                     if "max_tokens" in job and "results" not in job:
@@ -298,6 +389,14 @@ def main(argv: list[str] | None = None) -> None:
     g.add_argument("--limit", type=int, default=None)
     g.add_argument("--max-tokens", type=int, default=None)
     g.add_argument("--shard", default="0/1", help="i/n: take every n-th problem starting at i")
+
+    g.add_argument("--chunk-size", type=int, default=None, help="problems per saved chunk (default: models.yaml)")
+
+    e = sub.add_parser("extend", help="continue the cut-off chains of a finished run to a longer limit")
+    common(e)
+    e.add_argument("--max-tokens", type=int, required=True)
+    e.add_argument("--from-results", type=Path, default=DEFAULT_RESULTS)
+    e.add_argument("--chunk-size", type=int, default=20)
 
     b = sub.add_parser("budget", help="evaluate smaller thinking budgets by truncation")
     common(b)
@@ -343,7 +442,12 @@ def main(argv: list[str] | None = None) -> None:
     if a.cmd == "gen":
         i, n = (int(x) for x in a.shard.split("/"))
         generate_run(a.model, a.setting, a.fix, a.samples, a.limit, a.max_tokens, (i, n), a.results, a.ckpt_dir,
-                     backend_kind=a.backend, problems_file=a.problems)
+                     backend_kind=a.backend, problems_file=a.problems, chunk_size=a.chunk_size)
+    elif a.cmd == "extend":
+        if a.fix != "none" or a.samples != 1:
+            ap.error("extend only supports --fix none --samples 1")
+        extend_run(a.model, a.setting, a.max_tokens, a.from_results, a.results, a.chunk_size, a.ckpt_dir,
+                   problems_file=a.problems)
     elif a.cmd == "bench":
         bench_run(a.model, a.attn, a.concurrency, a.gen_tokens, a.results, a.ckpt_dir)
     elif a.cmd == "budget":
