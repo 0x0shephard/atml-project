@@ -1,0 +1,30 @@
+# Length-limit test, third session (planned 2026-11-24). R1 only, MATH-500 (200 problems).
+#
+# The second session (configs/cutoff2.yaml) ran out of time before it finished: 16 of 76 W3 chains
+# and 20 of 60 wanda-50 chains were not continued to 32,768 tokens, and W4 was not started.
+# results-32k-ext/ is now shipped with the results dataset, so the extend jobs resume where they
+# stopped. W4 goes first because it is the longest job (46 chains); the two short leftovers share
+# the other GPU.
+groups:
+  - name: extend-w4
+    kind: extend
+    models: [r1-1.5b]
+    settings: [rtn-w4-g128]
+    max_tokens: 32768
+    problems: problems_math500.jsonl
+    results: results-32k-ext
+    chunk_size: 20
+
+  - name: extend-rest
+    kind: extend
+    models: [r1-1.5b]
+    settings: [rtn-w3-g128, wanda-50]
+    max_tokens: 32768
+    problems: problems_math500.jsonl
+    results: results-32k-ext
+    chunk_size: 20
+
+  - name: forced-left
+    kind: budget
+    models: [r1-1.5b]
+    settings: [rtn-w4-g128]

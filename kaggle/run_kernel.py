@@ -21,6 +21,7 @@ import time
 
 JOB_FILE = "priority.yaml"  # set by push.sh
 GROUPS: list = []  # set by push.sh; empty = all groups
+CODE_VERSION = ""  # set by push.sh; must match CODE_VERSION in the crs-code dataset
 TIME_BUDGET_H = 10.5  # generation stops here (set by push.sh); Kaggle kills the session at 12 h
 POST_BUDGET_H = 1.2   # then the forced-answer step gets this long. Scoring runs locally (slow on CPU)
 VLLM_SPEC = "vllm==0.11.0"  # needs AdapterLogitsProcessor (>= 0.11); T4 works in float16
@@ -75,6 +76,12 @@ def main() -> None:
     code = "/tmp/crs-code"  # outside /kaggle/working, so the code is not part of the output
     shutil.copytree(code_src, code, dirs_exist_ok=True)
     unpack_dirs(code, ["src", "configs", "data"])
+    if CODE_VERSION:
+        vf = os.path.join(code, "CODE_VERSION")
+        got = open(vf).read().strip() if os.path.exists(vf) else "missing"
+        if got != CODE_VERSION:
+            sys.exit(f"crs-code dataset is version {got}, but this kernel was pushed with {CODE_VERSION}: "
+                     "Kaggle had not finished processing the upload. Push again.")
     sh(f"pip install -q '{VLLM_SPEC}' '{TRANSFORMERS_SPEC}' 'math-verify[antlr4_13_2]' statsmodels tabulate")
     sh(f"pip install -q --no-deps -e {code}")
 
@@ -89,10 +96,15 @@ def main() -> None:
 
     prev = find_input("crs-results.marker")
     if prev:
-        unpack_dirs(prev, ["results"])
-        if os.path.isdir(os.path.join(prev, "results")):
-            shutil.copytree(os.path.join(prev, "results"), RESULTS, dirs_exist_ok=True)
-            print(f"restored earlier results from {prev}", flush=True)
+        # results/ plus any longer-limit folders (results-32k-ext/ ...), zipped or not
+        names = sorted({n[:-4] if n.endswith(".zip") else n for n in os.listdir(prev)
+                        if n == "results" or n.startswith("results-") or n.startswith("results.")})
+        names = [n for n in names if n == "results" or n.startswith("results-")]
+        unpack_dirs(prev, names)
+        for n in names:
+            if os.path.isdir(os.path.join(prev, n)):
+                shutil.copytree(os.path.join(prev, n), f"{WORK}/{n}", dirs_exist_ok=True)
+                print(f"restored {n}/ from {prev}", flush=True)
     os.makedirs(RESULTS, exist_ok=True)
 
     spec = json.loads(subprocess.check_output(
