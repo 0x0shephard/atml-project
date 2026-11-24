@@ -117,6 +117,46 @@ def bench_run(model_key: str, attention_backend: str, concurrency: int, gen_toke
     return out
 
 
+class _Saver:
+    """Collects finished chains and writes them every ``every`` chains or ``every_s`` seconds."""
+
+    def __init__(self, writer: RunWriter, every: int = 20, every_s: float = 300.0):
+        self.writer, self.every, self.every_s = writer, every, every_s
+        self.recs: list[dict] = []
+        self.arrs: list[dict] = []
+        self.t = time.time()
+        self.n = 0
+
+    def add(self, rec: dict, arr: dict) -> None:
+        self.recs.append(rec)
+        self.arrs.append(arr)
+        self.n += 1
+        if len(self.recs) >= self.every or time.time() - self.t >= self.every_s:
+            self.flush()
+
+    def flush(self) -> None:
+        if self.recs:
+            self.writer.write_chunk(self.recs, self.arrs)
+            log.info("saved %d chains (%d so far)", len(self.recs), self.n)
+        self.recs, self.arrs, self.t = [], [], time.time()
+
+
+def _stop_check(gd: dict):  # noqa: ANN202
+    from .decoding.loops import LoopRule, is_looping
+
+    rule = LoopRule.from_config(gd.get("loop_stop"))
+    return (None, 256) if rule is None else ((lambda ids: is_looping(ids, rule)), rule.every)
+
+
+def _stream(backend: Backend, prompts: list, spec, on_done, stop, chunk: int, every: int) -> None:  # noqa: ANN001
+    from .backends.vllm_backend import VLLMBackend
+
+    if isinstance(backend, VLLMBackend):
+        backend.generate_stream(prompts, spec, on_done, stop, chunk, check_every=every)
+    else:
+        backend.generate_stream(prompts, spec, on_done, stop, chunk)
+
+
 def generate_run(model_key: str, setting: str, fix: str, samples: int = 1, limit: int | None = None,
                  max_tokens: int | None = None, shard: tuple[int, int] = (0, 1), results: Path = DEFAULT_RESULTS,
                  ckpt_dir: Path = DEFAULT_CKPT, backend: Backend | None = None, backend_kind: str | None = None,
@@ -154,28 +194,29 @@ def generate_run(model_key: str, setting: str, fix: str, samples: int = 1, limit
     t_start, n_tok, n_nonfinite = time.time(), 0, 0
     kind = backend_kind or config.settings()[setting].backend
     chunk = chunk_size or (gd.get("chunk_size_hf", gd["chunk_size"]) if kind == "hf" else gd["chunk_size"])
-    for c in range(0, len(todo), chunk):
-        batch = todo[c:c + chunk]
-        spec.seeds = [stable_seed(gd["seed"], p["id"]) for p in batch]
-        t0 = time.time()
-        outs = backend.generate([prompt_ids(p, mcfg, tok) for p in batch], spec)
-        recs, arrs = [], []
-        for p, samples_out in zip(batch, outs):
-            for si, g in enumerate(samples_out):
-                if g.logprobs is not None and not np.all(np.isfinite(g.logprobs)):
-                    n_nonfinite += 1
-                r, a = build_record(p, model_key, setting, fix, si, g, tok, tinfo)
-                recs.append(r)
-                arrs.append(a)
-                n_tok += len(g.token_ids)
-        writer.write_chunk(recs, arrs)
-        log.info("chunk %d: %d records, %.0f s", c // chunk, len(recs), time.time() - t0)
+    saver = _Saver(writer, gd.get("save_every", chunk), gd.get("save_every_s", 300))
+    stop, every = _stop_check(gd)
+    n_loop = 0
+    spec.seeds = [stable_seed(gd["seed"], p["id"]) for p in todo]
+
+    def done_one(i: int, samples_out: list) -> None:
+        nonlocal n_tok, n_nonfinite, n_loop
+        for si, g in enumerate(samples_out):
+            if g.logprobs is not None and not np.all(np.isfinite(g.logprobs)):
+                n_nonfinite += 1
+            n_loop += g.finish_reason == "loop"
+            r, a = build_record(todo[i], model_key, setting, fix, si, g, tok, tinfo)
+            saver.add(r, a)
+            n_tok += len(g.token_ids)
+
+    _stream(backend, [prompt_ids(p, mcfg, tok) for p in todo], spec, done_one, stop, chunk, every)
+    saver.flush()
     dt = time.time() - t_start
     writer.write_meta({
         "model": model_key, "setting": setting, "fix": fix, "samples": samples, "max_tokens": max_tokens,
         "n_problems": len(todo), "tokens": n_tok, "seconds": dt, "tokens_per_s": n_tok / max(dt, 1e-9),
         "records_with_nonfinite_logprobs": n_nonfinite, "hesitation_skipped_words": hand.skipped,
-        "logit_bias_tokens": len(spec.logit_bias or {}),
+        "logit_bias_tokens": len(spec.logit_bias or {}), "stopped_looping": n_loop,
     })
     if n_nonfinite:
         log.warning("%d records had non-finite logprobs: check fp16 numerics (models.yaml dtype)", n_nonfinite)
@@ -233,32 +274,35 @@ def extend_run(model_key: str, setting: str, max_tokens: int, from_results: Path
     own = backend is None
     if cont and backend is None:
         backend = open_backend(model_key, setting, max_tokens + 2048, from_results, ckpt_dir)
-    t_start, n_new = time.time(), 0
-    for c in range(0, len(cont), chunk_size):
-        batch = cont[c:c + chunk_size]
-        olds = [as_gen(r) for r in batch]
-        prompts = [prompt_ids(probs[r["problem_id"]], mcfg, tok) + g.token_ids for r, g in zip(batch, olds)]
+    t_start, n_new, n_loop = time.time(), 0, 0
+    if cont:
+        olds = [as_gen(r) for r in cont]
+        prompts = [prompt_ids(probs[r["problem_id"]], mcfg, tok) + g.token_ids for r, g in zip(cont, olds)]
         # every continued chain has the same room left only if the old ones all hit the same
         # limit, which they did (they were cut off); take the room of the longest to be safe
         spec = decode_spec(model_key, "none", tok, max_tokens - max(len(g.token_ids) for g in olds), 1)
-        spec.seeds = [stable_seed(gd["seed"] + 1, r["problem_id"]) for r in batch]
-        t0 = time.time()
-        outs = backend.generate(prompts, spec)
-        recs, out_arrs = [], []
-        for r, g, o in zip(batch, olds, outs):
-            new = o[0]
+        spec.seeds = [stable_seed(gd["seed"] + 1, r["problem_id"]) for r in cont]
+        saver = _Saver(writer, gd.get("save_every", chunk_size), gd.get("save_every_s", 300))
+        stop, every = _stop_check(gd)
+        cat = lambda a, b: None if a is None or b is None else np.concatenate([np.asarray(a, np.float32), np.asarray(b, np.float32)])  # noqa: E731
+
+        def done_one(i: int, o: list) -> None:
+            nonlocal n_new, n_loop
+            r, g, new = cont[i], olds[i], o[0]
             n_new += len(new.token_ids)
-            cat = lambda a, b: None if a is None or b is None else np.concatenate([np.asarray(a, np.float32), np.asarray(b, np.float32)])  # noqa: E731
+            n_loop += new.finish_reason == "loop"
             merged = GenResult(g.token_ids + list(new.token_ids), cat(g.logprobs, new.logprobs),
                                cat(g.entropy, new.entropy), new.finish_reason)
             rec, a = build_record(probs[r["problem_id"]], model_key, setting, "none", 0, merged, tok, tinfo)
             rec["extended_from"] = r["n_tokens"]
-            recs.append(rec)
-            out_arrs.append(a)
-        writer.write_chunk(recs, out_arrs)
-        log.info("chunk %d: %d continued chains, %.0f s", c // chunk_size, len(recs), time.time() - t0)
+            saver.add(rec, a)
+
+        # the loop check sees only the new tokens; a chain already looping at the old limit is
+        # caught within its first few hundred new tokens
+        _stream(backend, prompts, spec, done_one, stop, chunk_size, every)
+        saver.flush()
     writer.write_meta({"model": model_key, "setting": setting, "fix": "none", "samples": 1, "max_tokens": max_tokens,
-                       "extended_from": str(src), "n_copied": len(keep), "n_continued": len(cont),
+                       "extended_from": str(src), "n_copied": len(keep), "n_continued": len(cont), "stopped_looping": n_loop,
                        "new_tokens": n_new, "seconds": time.time() - t_start})
     if own and backend is not None:
         backend.close()

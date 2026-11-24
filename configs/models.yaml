@@ -42,5 +42,13 @@ generation:
   chunk_size: 180           # problems per write-out chunk, vLLM. 64 left the GPU idle while each
                             # chunk's slowest chain finished (~300 tok/s vs 630 in the bench).
   chunk_size_hf: 80         # same for the HF backend (KV settings): 2 batches of 40 for R1
+  # vLLM runs stream (2026-11-24): every problem goes to the engine at once and each chain is saved
+  # as it ends, so chunk_size only applies to the HF backend and to sampling n > 1. Finished chains
+  # are written out every save_every chains or save_every_s seconds, whichever comes first.
+  save_every: 20
+  save_every_s: 300
+  # stop a chain once the same 64 tokens have been written 8 times (crs.decoding.loops); it is
+  # saved with finish_reason "loop" and scored like a cut-off chain. false turns it off.
+  loop_stop: {window: 64, repeats: 8, lookback: 8192, every: 256}
   vllm_attention_backend: TRITON_ATTN  # 2026-11-21 bench on T4: the only one that works. FlexAttention (vLLM's
                                       # default) runs out of memory mid-run; xFormers has no T4 kernel.

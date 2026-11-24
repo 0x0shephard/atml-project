@@ -25,7 +25,8 @@ TEXT_FIELDS = ("think_text", "answer_text")
 
 
 def is_truncated(rec: dict, answered: bool) -> bool:
-    return not answered and rec.get("finish_reason") == "length"
+    # "loop": stopped early because it was repeating itself; it would have run to the limit
+    return not answered and rec.get("finish_reason") in ("length", "loop")
 
 
 def outcome(correct: bool, had_correct: bool, truncated: bool = False) -> str:

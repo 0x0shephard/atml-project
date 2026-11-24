@@ -1,7 +1,11 @@
 #!/usr/bin/env bash
 # Push the code, the results gathered so far and the run kernel to Kaggle.
 #
-#   [HOURS=10.5] kaggle/push.sh <kaggle-username> [smoke.yaml|priority.yaml] [GROUP ...]
+#   [HOURS=10.5] [KERNEL=crs-run] kaggle/push.sh <kaggle-username> [smoke.yaml|priority.yaml] [GROUP ...]
+#
+# KERNEL names the notebook. Kaggle runs one session per notebook, so a second session at the same
+# time on the same account needs another name (e.g. KERNEL=crs-run-b). Give parallel sessions
+# different job files or groups: two sessions must never write the same run folder.
 #
 # Needs the kaggle CLI (`uv tool install kaggle --with six`), signed in with `kaggle auth login`.
 set -euo pipefail
@@ -11,7 +15,8 @@ shift $(( $# >= 2 ? 2 : 1 ))
 GROUPS_PY=$(python3 -c 'import json,sys; print(json.dumps(sys.argv[1:]))' "$@")
 
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
-BUILD="$ROOT/build/kaggle"
+KERNEL=${KERNEL:-crs-run}
+BUILD="$ROOT/build/kaggle-$KUSER-$KERNEL"  # per notebook, so two pushes can overlap
 rm -rf "$BUILD" && mkdir -p "$BUILD/code" "$BUILD/results" "$BUILD/kernel"
 
 dsver() {  # "<status> <version>" of a dataset; retries through API hiccups, "unknown 0" if it gives up
@@ -81,12 +86,13 @@ sed -e "s/^JOB_FILE = .*/JOB_FILE = \"$JOBS\"  # set by push.sh/" \
     -e "s/^GROUPS: list = .*/GROUPS: list = $GROUPS_PY  # set by push.sh/" \
     -e "s/^CODE_VERSION = .*/CODE_VERSION = \"$CODE_VERSION\"  # set by push.sh/" \
     "$ROOT/kaggle/run_kernel.py" > "$BUILD/kernel/run_kernel.py"
-sed "s/{USER}/$KUSER/g" "$ROOT/kaggle/kernel-metadata.json.tmpl" > "$BUILD/kernel/kernel-metadata.json"
+sed -e "s/{USER}/$KUSER/g" -e "s/{KERNEL}/$KERNEL/g" "$ROOT/kaggle/kernel-metadata.json.tmpl" > "$BUILD/kernel/kernel-metadata.json"
 
 echo "waiting for Kaggle to finish processing the datasets..."
 wait_ready crs-code "$CODE_OLD"
 wait_ready crs-results "$RESULTS_OLD"
 kaggle kernels push -p "$BUILD/kernel"
 echo "pushed (GPU T4 x2). Follow with:"
-echo "  kaggle kernels status $KUSER/crs-run"
-echo "  kaggle kernels logs -f $KUSER/crs-run"
+echo "  kaggle kernels status $KUSER/$KERNEL"
+echo "  kaggle kernels logs -f $KUSER/$KERNEL"
+echo "  kaggle/pull.sh $KUSER $KERNEL"

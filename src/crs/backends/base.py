@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
+from collections.abc import Callable
+from dataclasses import dataclass, field, replace
 from typing import Any
 
 from ..record import GenResult
@@ -30,6 +31,20 @@ class Backend(ABC):
     @abstractmethod
     def generate(self, prompt_ids: list[list[int]], spec: DecodeSpec) -> list[list[GenResult]]:
         """Return ``spec.n`` samples for each prompt, in prompt order."""
+
+    def generate_stream(self, prompt_ids: list[list[int]], spec: DecodeSpec,
+                        on_done: Callable[[int, list[GenResult]], None],
+                        stop_check: Callable[[list[int]], bool] | None = None, chunk: int = 20) -> None:
+        """Generate for every prompt, calling ``on_done(prompt_index, samples)`` as each one finishes.
+
+        ``stop_check`` sees a chain's tokens so far; when it returns True the chain is stopped and
+        reported with finish_reason "loop". This default works in chunks of ``chunk`` prompts and
+        ignores ``stop_check``; the vLLM backend overrides it to keep the GPU full and stop early.
+        """
+        for c in range(0, len(prompt_ids), chunk):
+            sub = replace(spec, seeds=spec.seeds[c:c + chunk] if spec.seeds else None)
+            for i, out in enumerate(self.generate(prompt_ids[c:c + chunk], sub)):
+                on_done(c + i, out)
 
     def close(self) -> None:  # noqa: B027 - optional hook
         pass

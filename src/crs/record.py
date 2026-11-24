@@ -35,7 +35,7 @@ class GenResult:
     token_ids: list[int]
     logprobs: np.ndarray | None = None  # chosen-token log-prob per position
     entropy: np.ndarray | None = None  # top-k entropy estimate per position
-    finish_reason: str = "length"  # "stop" | "length"
+    finish_reason: str = "length"  # "stop" | "length" | "loop" (stopped early: stuck repeating itself)
 
 
 def topk_entropy(topk_logprobs: Sequence[float] | np.ndarray) -> float:
@@ -134,7 +134,7 @@ def build_record(
         "setting": setting,
         "fix": fix,
         "sample_idx": sample_idx,
-        "finish_reason": "stop" if stopped else "length",
+        "finish_reason": "stop" if stopped else ("loop" if gen.finish_reason == "loop" else "length"),
         "think_closed": think_closed,
         "n_tokens": n,
         "n_think_tokens": n_think,

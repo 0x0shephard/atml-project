@@ -1,0 +1,9 @@
+# First run on the second model, Qwen3-1.7B (planned 2026-11-24), and the first real use of the
+# streaming generator and loop stopping (crs.decoding.loops). All 360 problems, 8,192 tokens, no fix:
+# the same set-up as the R1 main test, so the two models line up. Full size on one GPU, 3-bit RTN
+# on the other. Check the log for "stream:" lines (speed, chains stopped for looping).
+groups:
+  - name: qwen3-main-first
+    models: [qwen3-1.7b]
+    settings: [base, rtn-w3-g128]
+    fix: none
