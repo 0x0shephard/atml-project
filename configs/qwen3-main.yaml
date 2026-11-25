@@ -1,0 +1,10 @@
+# Qwen3-1.7B main test (planned 2026-11-24), on jonraza15 with HOURS=7. All 360 problems, 8,192 tokens,
+# no fix, the same set-up as the R1 main test. base resumes from the 134 chains saved before the
+# 24 Nov cancel. 3-bit RTN is left out: it is broken on Qwen3 (0.8% right, nearly every chain loops),
+# so 4-bit stands in for weight quantization. Qwen3 runs about 130 tok/s per GPU (its KV cache holds
+# only ~79k tokens on a T4), so each full run takes ~3 h; the four runs fill two GPUs for ~6-7 h.
+groups:
+  - name: qwen3-main
+    models: [qwen3-1.7b]
+    settings: [base, rtn-w4-g128, wanda-50, wanda-30]
+    fix: none

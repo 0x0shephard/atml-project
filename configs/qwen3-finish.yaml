@@ -1,0 +1,10 @@
+# Rest of the Qwen3-1.7B main test (planned 2026-11-25), on jonraza15 with HOURS=4 POST_HOURS=0:
+# 4.78 GPU-h left this week, and Qwen3's forced-answer step (~0.6-0.9 h per run) does not fit, so it is
+# skipped and done after the 28 Nov reset. Jobs take the next free GPU, top to bottom:
+#   GPU0: 4-bit, the 22 problems left (the long ones), then wanda-30 until time runs out (resumes later)
+#   GPU1: wanda-50, the 176 problems left (~3 h at the last session's pace)
+groups:
+  - name: qwen3-finish
+    models: [qwen3-1.7b]
+    settings: [rtn-w4-g128, wanda-50, wanda-30]
+    fix: none

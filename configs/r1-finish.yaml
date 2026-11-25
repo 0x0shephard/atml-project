@@ -1,0 +1,38 @@
+# Loose ends of the R1 runs (planned 2026-11-24), on sarfrazahmads with HOURS=3 (4.8 GPU-h left this
+# week). Jobs go to whichever GPU is free, top to bottom; base-hf is last because it soaks up any time
+# left and resumes in a later session.
+groups:
+  # the low-rank setting for the main test, in place of the broken svd-r80: the calibration run did
+  # 120 problems, this adds the other 240
+  - name: r1-lowrank-main
+    models: [r1-1.5b]
+    settings: [asvd-r95]
+    fix: none
+
+  # 4-bit KV cache: 24 of 360 problems left (AIME 2025)
+  - name: r1-kv-finish
+    models: [r1-1.5b]
+    settings: [kv-int4]
+    fix: none
+
+  # 32k length limit: 6 chains left for W4, 20 for wanda-50
+  - name: extend-left
+    kind: extend
+    models: [r1-1.5b]
+    settings: [rtn-w4-g128, wanda-50]
+    max_tokens: 32768
+    problems: problems_math500.jsonl
+    results: results-32k-ext
+    chunk_size: 20
+
+  # forced answers at each thinking budget for W4, the only main R1 run without them
+  - name: forced-w4
+    kind: budget
+    models: [r1-1.5b]
+    settings: [rtn-w4-g128]
+
+  # full-size model on the HF backend (the control for the KV runs): 128 of 360 done
+  - name: r1-basehf
+    models: [r1-1.5b]
+    settings: [base-hf]
+    fix: none

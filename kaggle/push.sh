@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Push the code, the results gathered so far and the run kernel to Kaggle.
 #
-#   [HOURS=10.5] [KERNEL=crs-run] kaggle/push.sh <kaggle-username> [smoke.yaml|priority.yaml] [GROUP ...]
+#   [HOURS=10.5] [POST_HOURS=1.2] [KERNEL=crs-run] kaggle/push.sh <kaggle-username> [smoke.yaml|priority.yaml] [GROUP ...]
 #
 # KERNEL names the notebook. Kaggle runs one session per notebook, so a second session at the same
 # time on the same account needs another name (e.g. KERNEL=crs-run-b). Give parallel sessions
@@ -81,8 +81,10 @@ dataset "$BUILD/results" crs-results "crs-results"
 RESULTS_OLD=$DSV
 
 HOURS=${HOURS:-10.5}  # generation time budget for this session (Kaggle stops it at 12 h)
+POST_HOURS=${POST_HOURS:-1.2}  # then the forced-answer step; 0 skips it (a Qwen3 run takes ~0.6-0.9 h)
 sed -e "s/^JOB_FILE = .*/JOB_FILE = \"$JOBS\"  # set by push.sh/" \
     -e "s/^TIME_BUDGET_H = [0-9.]*/TIME_BUDGET_H = $HOURS/" \
+    -e "s/^POST_BUDGET_H = [0-9.]*/POST_BUDGET_H = $POST_HOURS/" \
     -e "s/^GROUPS: list = .*/GROUPS: list = $GROUPS_PY  # set by push.sh/" \
     -e "s/^CODE_VERSION = .*/CODE_VERSION = \"$CODE_VERSION\"  # set by push.sh/" \
     "$ROOT/kaggle/run_kernel.py" > "$BUILD/kernel/run_kernel.py"
