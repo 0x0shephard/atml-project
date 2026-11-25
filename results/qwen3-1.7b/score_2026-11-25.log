@@ -1,0 +1,8 @@
+2026-11-25 07:24:00,052 httpx2 INFO HTTP Request: GET https://huggingface.co/api/models/Qwen/Qwen3-1.7B "HTTP/1.1 200 OK"
+2026-11-25 07:24:00,333 httpx2 INFO HTTP Request: GET https://huggingface.co/api/models/Qwen/Qwen3-1.7B/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+2026-11-25 07:24:00,696 httpx2 INFO HTTP Request: GET https://huggingface.co/api/models/Qwen/Qwen3-1.7B/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-11-25 07:24:01,180 httpx2 INFO HTTP Request: GET https://huggingface.co/api/models/Qwen/Qwen3-1.7B "HTTP/1.1 200 OK"
+2026-11-25 07:24:08,423 math_verify.grader WARNING Timeout during comparison
+results/qwen3-1.7b/rtn-w4-g128/none: n=360 acc=0.525 commit_fail=0.000
+results/qwen3-1.7b/wanda-50/none: n=360 acc=0.267 commit_fail=0.033
+results/qwen3-1.7b/wanda-30/none: n=273 acc=0.788 commit_fail=0.007

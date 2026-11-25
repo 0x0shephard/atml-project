@@ -1,0 +1,43 @@
+{
+ "jobs": [
+  {
+   "group": "qwen3-finish",
+   "kind": "gen",
+   "model": "qwen3-1.7b",
+   "setting": "rtn-w4-g128",
+   "fix": "none",
+   "samples": 1,
+   "returncode": 0
+  },
+  {
+   "group": "qwen3-finish",
+   "kind": "gen",
+   "model": "qwen3-1.7b",
+   "setting": "wanda-50",
+   "fix": "none",
+   "samples": 1,
+   "returncode": 0
+  },
+  {
+   "group": "qwen3-finish",
+   "kind": "gen",
+   "model": "qwen3-1.7b",
+   "setting": "wanda-30",
+   "fix": "none",
+   "samples": 1,
+   "stopped_at_budget": true,
+   "returncode": -9
+  }
+ ],
+ "hours": 4.001935001545482,
+ "left": [
+  {
+   "group": "qwen3-finish",
+   "kind": "gen",
+   "model": "qwen3-1.7b",
+   "setting": "wanda-30",
+   "fix": "none",
+   "samples": 1
+  }
+ ]
+}

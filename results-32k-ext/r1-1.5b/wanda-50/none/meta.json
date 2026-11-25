@@ -1,0 +1,18 @@
+{
+  "sessions": [
+    {
+      "model": "r1-1.5b",
+      "setting": "wanda-50",
+      "fix": "none",
+      "samples": 1,
+      "max_tokens": 32768,
+      "extended_from": "/kaggle/working/results/r1-1.5b/wanda-50/none",
+      "n_copied": 0,
+      "n_continued": 20,
+      "stopped_looping": 14,
+      "new_tokens": 71690,
+      "seconds": 1264.2931354045868,
+      "time": "2026-11-24 14:32:27"
+    }
+  ]
+}

@@ -1,0 +1,92 @@
+{
+ "jobs": [
+  {
+   "group": "extend-key",
+   "kind": "extend",
+   "model": "r1-1.5b",
+   "setting": "base",
+   "fix": "none",
+   "samples": 1,
+   "max_tokens": 32768,
+   "results": "results-32k-ext",
+   "chunk_size": 20,
+   "problems": "problems_math500.jsonl",
+   "returncode": 0
+  },
+  {
+   "group": "extend-key",
+   "kind": "extend",
+   "model": "r1-1.5b",
+   "setting": "rtn-w3-g128",
+   "fix": "none",
+   "samples": 1,
+   "max_tokens": 32768,
+   "results": "results-32k-ext",
+   "chunk_size": 20,
+   "problems": "problems_math500.jsonl",
+   "stopped_at_budget": true,
+   "returncode": -9
+  },
+  {
+   "group": "extend-more",
+   "kind": "extend",
+   "model": "r1-1.5b",
+   "setting": "wanda-50",
+   "fix": "none",
+   "samples": 1,
+   "max_tokens": 32768,
+   "results": "results-32k-ext",
+   "chunk_size": 20,
+   "problems": "problems_math500.jsonl",
+   "stopped_at_budget": true,
+   "returncode": -9
+  }
+ ],
+ "hours": 7.005634595884217,
+ "left": [
+  {
+   "group": "extend-more",
+   "kind": "extend",
+   "model": "r1-1.5b",
+   "setting": "wanda-50",
+   "fix": "none",
+   "samples": 1,
+   "max_tokens": 32768,
+   "results": "results-32k-ext",
+   "chunk_size": 20,
+   "problems": "problems_math500.jsonl"
+  },
+  {
+   "group": "extend-key",
+   "kind": "extend",
+   "model": "r1-1.5b",
+   "setting": "rtn-w3-g128",
+   "fix": "none",
+   "samples": 1,
+   "max_tokens": 32768,
+   "results": "results-32k-ext",
+   "chunk_size": 20,
+   "problems": "problems_math500.jsonl"
+  },
+  {
+   "group": "extend-more",
+   "kind": "extend",
+   "model": "r1-1.5b",
+   "setting": "rtn-w4-g128",
+   "fix": "none",
+   "samples": 1,
+   "max_tokens": 32768,
+   "results": "results-32k-ext",
+   "chunk_size": 20,
+   "problems": "problems_math500.jsonl"
+  },
+  {
+   "group": "forced-left",
+   "kind": "budget",
+   "model": "r1-1.5b",
+   "setting": "rtn-w4-g128",
+   "fix": "none",
+   "samples": 1
+  }
+ ]
+}

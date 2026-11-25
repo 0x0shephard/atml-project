@@ -1,0 +1,35 @@
+{
+  "sessions": [
+    {
+      "model": "qwen3-1.7b",
+      "setting": "rtn-w3-g128",
+      "fix": "none",
+      "samples": 1,
+      "max_tokens": 8192,
+      "n_problems": 360,
+      "tokens": 684797,
+      "seconds": 3300.6403896808624,
+      "tokens_per_s": 207.47398054660925,
+      "records_with_nonfinite_logprobs": 0,
+      "hesitation_skipped_words": [
+        "Hmmm",
+        "Huh",
+        "Whoa",
+        "Recheck",
+        "Rechecking",
+        "Reconsider",
+        "Reconsidering",
+        "Verifying",
+        "Mistake",
+        "Confused",
+        "Confusing",
+        "Contradiction",
+        "Unclear",
+        "Doubt"
+      ],
+      "logit_bias_tokens": 0,
+      "stopped_looping": 346,
+      "time": "2026-11-24 00:45:07"
+    }
+  ]
+}

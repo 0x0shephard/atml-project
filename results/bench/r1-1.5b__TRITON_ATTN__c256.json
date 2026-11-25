@@ -1,0 +1,12 @@
+{
+ "model": "r1-1.5b",
+ "attention_backend": "TRITON_ATTN",
+ "concurrency": 256,
+ "gen_tokens": 2048,
+ "startup_s": 89.25413393974304,
+ "gen_s": 739.4257056713104,
+ "tokens": 524288,
+ "tokens_per_s": 709.0475702680758,
+ "per_seq_tokens_per_s": 2.769717071359671,
+ "nonfinite": 0
+}

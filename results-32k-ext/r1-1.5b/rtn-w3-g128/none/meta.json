@@ -1,0 +1,17 @@
+{
+  "sessions": [
+    {
+      "model": "r1-1.5b",
+      "setting": "rtn-w3-g128",
+      "fix": "none",
+      "samples": 1,
+      "max_tokens": 32768,
+      "extended_from": "/kaggle/working/results/r1-1.5b/rtn-w3-g128/none",
+      "n_copied": 0,
+      "n_continued": 16,
+      "new_tokens": 270737,
+      "seconds": 4454.245394229889,
+      "time": "2026-11-24 00:23:00"
+    }
+  ]
+}

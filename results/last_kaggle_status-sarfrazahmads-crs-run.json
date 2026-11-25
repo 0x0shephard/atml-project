@@ -1,0 +1,78 @@
+{
+ "jobs": [
+  {
+   "group": "r1-kv-finish",
+   "kind": "gen",
+   "model": "r1-1.5b",
+   "setting": "kv-int4",
+   "fix": "none",
+   "samples": 1,
+   "returncode": 0
+  },
+  {
+   "group": "r1-lowrank-main",
+   "kind": "gen",
+   "model": "r1-1.5b",
+   "setting": "asvd-r95",
+   "fix": "none",
+   "samples": 1,
+   "returncode": 0
+  },
+  {
+   "group": "extend-left",
+   "kind": "extend",
+   "model": "r1-1.5b",
+   "setting": "rtn-w4-g128",
+   "fix": "none",
+   "samples": 1,
+   "max_tokens": 32768,
+   "results": "results-32k-ext",
+   "chunk_size": 20,
+   "problems": "problems_math500.jsonl",
+   "returncode": 0
+  },
+  {
+   "group": "extend-left",
+   "kind": "extend",
+   "model": "r1-1.5b",
+   "setting": "wanda-50",
+   "fix": "none",
+   "samples": 1,
+   "max_tokens": 32768,
+   "results": "results-32k-ext",
+   "chunk_size": 20,
+   "problems": "problems_math500.jsonl",
+   "returncode": 0
+  },
+  {
+   "group": "forced-w4",
+   "kind": "budget",
+   "model": "r1-1.5b",
+   "setting": "rtn-w4-g128",
+   "fix": "none",
+   "samples": 1,
+   "returncode": 0
+  },
+  {
+   "group": "r1-basehf",
+   "kind": "gen",
+   "model": "r1-1.5b",
+   "setting": "base-hf",
+   "fix": "none",
+   "samples": 1,
+   "stopped_at_budget": true,
+   "returncode": -9
+  }
+ ],
+ "hours": 3.86936358736621,
+ "left": [
+  {
+   "group": "r1-basehf",
+   "kind": "gen",
+   "model": "r1-1.5b",
+   "setting": "base-hf",
+   "fix": "none",
+   "samples": 1
+  }
+ ]
+}

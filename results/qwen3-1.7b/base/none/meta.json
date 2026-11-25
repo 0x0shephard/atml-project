@@ -1,0 +1,35 @@
+{
+  "sessions": [
+    {
+      "model": "qwen3-1.7b",
+      "setting": "base",
+      "fix": "none",
+      "samples": 1,
+      "max_tokens": 8192,
+      "n_problems": 226,
+      "tokens": 1143208,
+      "seconds": 13805.151399612427,
+      "tokens_per_s": 82.81024719744073,
+      "records_with_nonfinite_logprobs": 0,
+      "hesitation_skipped_words": [
+        "Hmmm",
+        "Huh",
+        "Whoa",
+        "Recheck",
+        "Rechecking",
+        "Reconsider",
+        "Reconsidering",
+        "Verifying",
+        "Mistake",
+        "Confused",
+        "Confusing",
+        "Contradiction",
+        "Unclear",
+        "Doubt"
+      ],
+      "logit_bias_tokens": 0,
+      "stopped_looping": 0,
+      "time": "2026-11-24 13:37:19"
+    }
+  ]
+}

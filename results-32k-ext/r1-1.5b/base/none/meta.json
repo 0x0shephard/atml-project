@@ -1,0 +1,17 @@
+{
+  "sessions": [
+    {
+      "model": "r1-1.5b",
+      "setting": "base",
+      "fix": "none",
+      "samples": 1,
+      "max_tokens": 32768,
+      "extended_from": "/kaggle/working/results/r1-1.5b/base/none",
+      "n_copied": 163,
+      "n_continued": 37,
+      "new_tokens": 329990,
+      "seconds": 5217.08526968956,
+      "time": "2026-11-23 13:42:58"
+    }
+  ]
+}

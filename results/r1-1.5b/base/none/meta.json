@@ -1,0 +1,34 @@
+{
+  "sessions": [
+    {
+      "model": "r1-1.5b",
+      "setting": "base",
+      "fix": "none",
+      "samples": 1,
+      "max_tokens": 8192,
+      "n_problems": 360,
+      "tokens": 1408990,
+      "seconds": 4555.89972949028,
+      "tokens_per_s": 309.2671225575106,
+      "records_with_nonfinite_logprobs": 0,
+      "hesitation_skipped_words": [
+        "Hmmm",
+        "Huh",
+        "Whoa",
+        "Recheck",
+        "Rechecking",
+        "Reconsider",
+        "Reconsidering",
+        "Verifying",
+        "Mistake",
+        "Confused",
+        "Confusing",
+        "Contradiction",
+        "Unclear",
+        "Doubt"
+      ],
+      "logit_bias_tokens": 0,
+      "time": "2026-11-21 16:06:47"
+    }
+  ]
+}

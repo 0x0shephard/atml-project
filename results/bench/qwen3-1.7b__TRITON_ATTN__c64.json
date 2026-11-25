@@ -1,0 +1,12 @@
+{
+ "model": "qwen3-1.7b",
+ "attention_backend": "TRITON_ATTN",
+ "concurrency": 64,
+ "gen_tokens": 2048,
+ "startup_s": 104.31923508644104,
+ "gen_s": 535.0000479221344,
+ "tokens": 131072,
+ "tokens_per_s": 244.9943705782184,
+ "per_seq_tokens_per_s": 3.8280370402846624,
+ "nonfinite": 0
+}

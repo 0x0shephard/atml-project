@@ -1,0 +1,11 @@
+2026-11-24 22:18:55,694 httpx2 INFO HTTP Request: GET https://huggingface.co/api/agent-harnesses "HTTP/1.1 200 OK"
+2026-11-24 22:18:56,060 httpx2 INFO HTTP Request: GET https://huggingface.co/api/models/deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B "HTTP/1.1 200 OK"
+2026-11-24 22:18:56,411 httpx2 INFO HTTP Request: GET https://huggingface.co/api/models/deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+2026-11-24 22:18:56,764 httpx2 INFO HTTP Request: GET https://huggingface.co/api/models/deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-11-24 22:18:57,303 httpx2 INFO HTTP Request: GET https://huggingface.co/api/models/deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B "HTTP/1.1 200 OK"
+[transformers] Token indices sequence length is longer than the specified maximum sequence length for this model (32768 > 16384). Running this sequence through the model will result in indexing errors
+results/r1-1.5b/asvd-r95/none: n=360 acc=0.506 commit_fail=0.006
+results/r1-1.5b/kv-int4/none: n=360 acc=0.672 commit_fail=0.011
+results/r1-1.5b/base-hf/none: n=189 acc=0.741 commit_fail=0.000
+results-32k-ext/r1-1.5b/rtn-w4-g128/none: n=200 acc=0.800 commit_fail=0.040
+results-32k-ext/r1-1.5b/wanda-50/none: n=200 acc=0.615 commit_fail=0.060

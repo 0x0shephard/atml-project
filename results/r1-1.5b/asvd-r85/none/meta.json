@@ -1,0 +1,34 @@
+{
+  "sessions": [
+    {
+      "model": "r1-1.5b",
+      "setting": "asvd-r85",
+      "fix": "none",
+      "samples": 1,
+      "max_tokens": 8192,
+      "n_problems": 120,
+      "tokens": 967107,
+      "seconds": 3999.134444952011,
+      "tokens_per_s": 241.8290790950403,
+      "records_with_nonfinite_logprobs": 0,
+      "hesitation_skipped_words": [
+        "Hmmm",
+        "Huh",
+        "Whoa",
+        "Recheck",
+        "Rechecking",
+        "Reconsider",
+        "Reconsidering",
+        "Verifying",
+        "Mistake",
+        "Confused",
+        "Confusing",
+        "Contradiction",
+        "Unclear",
+        "Doubt"
+      ],
+      "logit_bias_tokens": 0,
+      "time": "2026-11-22 10:06:33"
+    }
+  ]
+}
