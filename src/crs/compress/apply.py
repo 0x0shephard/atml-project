@@ -16,13 +16,15 @@ from torch import nn
 
 from ..config import ModelConfig, Setting, calibration
 from ..record import iter_records
+from .awq import iter_awq
 from .lowrank import asvd_truncate, svd_truncate
 from .prune import collect_input_norms, magnitude_prune, wanda_prune
 from .quant import fake_quant_rtn
 
 log = logging.getLogger(__name__)
 
-NEEDS_CALIBRATION = {"wanda", "asvd"}
+NEEDS_CALIBRATION = {"wanda", "asvd", "awq"}
+NEEDS_NORMS = {"wanda", "asvd"}
 
 
 def target_linears(model: nn.Module) -> dict[str, nn.Linear]:
@@ -54,16 +56,24 @@ def compress_model(model: nn.Module, spec: dict, calib: list[torch.Tensor] | Non
     """Apply ``spec`` (a setting's ``weight`` block) in place. Returns summary stats."""
     method = spec["method"]
     linears = target_linears(model)
-    norms = None
-    if method in NEEDS_CALIBRATION:
-        if calib is None:
-            raise ValueError(f"{method} needs calibration batches")
+    norms, extra = None, {}
+    if method in NEEDS_CALIBRATION and calib is None:
+        raise ValueError(f"{method} needs calibration batches")
+    if method in NEEDS_NORMS:
         norms = collect_input_norms(model, linears, calib)
+    if method == "awq":  # works a group of layers at a time, so walk its output instead
+        order = iter_awq(model, linears, calib, spec["bits"], spec.get("group_size", 128),  # type: ignore[arg-type]
+                         n_tokens=spec.get("n_tokens", 4096), clip=spec.get("clip", True), stats=extra)
+    else:
+        order = ((n, None) for n in linears)
     rel_err, zeros, total = [], 0, 0
-    for name, lin in linears.items():
+    for name, awq_w in order:
+        lin = linears[name]
         w = lin.weight.data
         wf = w.float()
-        if method == "rtn":
+        if awq_w is not None:
+            new = awq_w.float()
+        elif method == "rtn":
             new = fake_quant_rtn(wf, spec["bits"], spec.get("group_size", 128), spec.get("sym", False))
         elif method == "magnitude":
             new = magnitude_prune(wf, spec["sparsity"])
@@ -84,6 +94,7 @@ def compress_model(model: nn.Module, spec: dict, calib: list[torch.Tensor] | Non
         "mean_rel_frob_error": sum(rel_err) / max(len(rel_err), 1),
         "max_rel_frob_error": max(rel_err, default=0.0),
         "zero_fraction": zeros / max(total, 1),
+        **extra,
     }
 
 
@@ -106,8 +117,10 @@ def build_checkpoint(model_cfg: ModelConfig, setting: Setting, out_root: Path, r
     calib = None
     if spec["method"] in NEEDS_CALIBRATION:
         c = calibration()
-        calib = calibration_batches(tok, model_cfg.key, results_dir, c.get("n_samples", 128), c.get("seq_len", 2048),
-                                    c.get("source", "baseline_chains"))
+        # AWQ uses AutoAWQ's calibration size (128 x 512 tokens) unless the setting says otherwise
+        n_samples = spec.get("calib_samples", 128 if spec["method"] == "awq" else c.get("n_samples", 128))
+        seq_len = spec.get("calib_seq_len", 512 if spec["method"] == "awq" else c.get("seq_len", 2048))
+        calib = calibration_batches(tok, model_cfg.key, results_dir, n_samples, seq_len, c.get("source", "baseline_chains"))
     stats = compress_model(model, spec, calib)
     log.info("compressed %s/%s: %s", model_cfg.key, setting.name, stats)
     out.mkdir(parents=True, exist_ok=True)

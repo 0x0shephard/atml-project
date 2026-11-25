@@ -98,3 +98,54 @@ def test_asvd_rank_and_activation_weighting():
     # ASVD protects the heavily used channels: smaller error where it matters
     x = torch.randn(256, 64) * act
     assert ((x @ (a - w).T).norm()) < ((x @ (p - w).T).norm())
+
+
+def test_awq_groups_no_worse_than_rtn(tiny):
+    """AWQ groups q/k/v and gate/up, and each group's output error on the calibration inputs is
+    no worse than plain RTN's (alpha 0 and no clipping are among the options searched)."""
+    from crs.compress.awq import awq_quantize, collect_inputs, layer_groups
+
+    torch.manual_seed(0)
+    linears = target_linears(tiny)
+    groups = layer_groups(linears)
+    shorts = sorted(tuple(n.rsplit(".", 1)[-1] for n in g) for g in groups if ".layers.0." in g[0])
+    assert shorts == [("down_proj",), ("gate_proj", "up_proj"), ("o_proj",), ("q_proj", "k_proj", "v_proj")]
+    calib = [torch.randint(0, 1000, (1, 64)) for _ in range(4)]
+    new, stats = awq_quantize(tiny, linears, calib, bits=3, group_size=32, n_tokens=256)
+    assert set(new) == set(linears) and 0 <= stats["awq_mean_alpha"] < 1 and 0.5 <= stats["awq_mean_clip"] <= 1
+    feats = collect_inputs(tiny, linears, groups, calib, 256)
+    for g in groups:  # the scale is shared by a group, so the guarantee is on the group's total error
+        x = feats[g[0]][1].float()
+        e_awq = e_rtn = 0.0
+        for name in g:
+            w = linears[name].weight.data.float()
+            e_awq += float((x @ (new[name] - w).T).pow(2).sum())
+            e_rtn += float((x @ (fake_quant_rtn(w, 3, 32) - w).T).pow(2).sum())
+        assert e_awq <= e_rtn * 1.001, g
+
+
+def test_awq_protects_large_channels():
+    """With a few huge input channels, the scale search picks alpha > 0 and beats RTN, while
+    still rounding to 2**bits levels per group."""
+    from crs.compress.awq import _scales, search_scale
+
+    torch.manual_seed(0)
+    w = torch.randn(64, 128)
+    x = torch.randn(512, 128)
+    x[:, :4] *= 30
+    absmean = x.abs().mean(0)
+    s, a = search_scale(x, absmean, w, 3, 64)
+    assert a > 0 and torch.allclose(s, _scales(absmean, a))
+    wq = fake_quant_rtn(w * s, 3, 64) / s
+    err = lambda q: (x @ (q - w).T).pow(2).mean()  # noqa: E731
+    assert err(wq) < 0.9 * err(fake_quant_rtn(w, 3, 64))
+    # in the scaled space each group of 64 still holds at most 2**3 values
+    assert all(g.unique().numel() <= 8 for g in fake_quant_rtn(w * s, 3, 64).reshape(-1, 64))
+
+
+def test_compress_model_awq(tiny):
+    calib = [torch.randint(0, 1000, (1, 48)) for _ in range(2)]
+    head = tiny.lm_head.weight.clone()
+    stats = compress_model(tiny, {"method": "awq", "bits": 4, "group_size": 32, "n_tokens": 64}, calib)
+    assert stats["n_linear"] == 14 and "awq_mean_alpha" in stats and stats["mean_rel_frob_error"] > 0
+    assert torch.equal(tiny.lm_head.weight, head)
