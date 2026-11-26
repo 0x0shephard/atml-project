@@ -54,7 +54,9 @@ The loop for every session:
    snapshot, update your task row, and add a Run log line.
 6. **Commit and push:** `git pull --rebase`, then commit the results and the ledger together.
 
-Using Claude Code? Paste your brief below into it as the task. `CLAUDE.md` in the repo tells it
+Using Claude Code (or another agent)? Give it the full brief for your role:
+[docs/briefs/member-a.md](briefs/member-a.md) or [docs/briefs/member-b.md](briefs/member-b.md). Each brief
+stands on its own with just the repo as context. `CLAUDE.md` in the repo tells it
 to keep the ledger.
 
 ---
