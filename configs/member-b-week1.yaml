@@ -1,0 +1,33 @@
+# Member B, first week after the 28 Nov reset (tasks T07, T08 and part of T09 in LEDGER.md).
+#   HOURS=8 kaggle/push.sh <member-b-kaggle-user> member-b-week1.yaml
+# Jobs take the next free GPU, top to bottom. Anything unfinished resumes in the next session.
+# Owned folders: results/qwen3-1.7b/wanda-30, the budget_* files of qwen3 rtn-w4 / wanda-50 and
+# r1 asvd-r95, and results/r1-1.5b/base-hf. Nobody else writes these this week.
+groups:
+  # T08: Qwen3 30% pruned, 87 of 360 problems left. Its forced answers run automatically after it
+  # finishes (the post step), since it has none yet.
+  - name: qwen3-wanda30-finish
+    models: [qwen3-1.7b]
+    settings: [wanda-30]
+    fix: none
+
+  # T08: forced answers for Qwen3 runs that lack them (wanda-50) or cover only part of the run
+  # (4-bit: 338 of 360). A `kind: budget` job redoes every chain of the run, so no files need moving.
+  - name: forced-qwen3
+    kind: budget
+    models: [qwen3-1.7b]
+    settings: [rtn-w4-g128, wanda-50]
+
+  # T09 (part): forced answers for R1 low rank on all 360 problems (only the 120 calibration
+  # problems have them).
+  - name: forced-r1-asvd
+    kind: budget
+    models: [r1-1.5b]
+    settings: [asvd-r95]
+
+  # T07: full-size R1 on the Hugging Face engine, the control for the KV-cache runs. 189 of 360
+  # done. Last, because it soaks up whatever time is left and resumes later.
+  - name: r1-basehf
+    models: [r1-1.5b]
+    settings: [base-hf]
+    fix: none
