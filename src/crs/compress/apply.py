@@ -14,7 +14,7 @@ from pathlib import Path
 import torch
 from torch import nn
 
-from ..config import ModelConfig, Setting, calibration
+from ..config import DATA_DIR, ModelConfig, Setting, calibration
 from ..record import iter_records
 from .awq import iter_awq
 from .lowrank import asvd_truncate, svd_truncate
@@ -31,8 +31,37 @@ def target_linears(model: nn.Module) -> dict[str, nn.Linear]:
     return {n: m for n, m in model.named_modules() if isinstance(m, nn.Linear) and ".layers." in n}
 
 
+PILE_POOL = DATA_DIR / "calib" / "pile_val_pool.jsonl"
+
+
+def pile_batches(tokenizer, n_samples: int, seq_len: int, pool: Path = PILE_POOL) -> list[torch.Tensor]:  # noqa: ANN001
+    """AutoAWQ's default calibration recipe on Pile validation text (what Lotfi et al. used): take
+    the first ``n_samples`` documents (pool order is already shuffled with seed 42) that fit in
+    ``seq_len`` tokens, join them and cut the result into ``seq_len``-token blocks. Short documents
+    mean this gives fewer than ``n_samples`` blocks, as in AutoAWQ. The pool is built once by
+    scripts/make_pile_calib.py and committed."""
+    if not pool.exists():
+        raise FileNotFoundError(f"{pool} missing: run scripts/make_pile_calib.py")
+    docs = []
+    with pool.open() as f:
+        for line in f:
+            ids = tokenizer(json.loads(line)["text"], add_special_tokens=False).input_ids
+            if 0 < len(ids) <= seq_len:
+                docs.append(torch.tensor(ids))
+            if len(docs) == n_samples:
+                break
+    cat = torch.cat(docs)
+    n = len(cat) // seq_len
+    return [cat[i * seq_len:(i + 1) * seq_len][None] for i in range(n)]
+
+
 def calibration_batches(tokenizer, model_key: str, results_dir: Path | None, n_samples: int, seq_len: int,  # noqa: ANN001
                         source: str = "baseline_chains") -> list[torch.Tensor]:
+    """Calibration token blocks. ``source``: ``baseline_chains`` (the full-size model's own saved
+    chains, falling back to wikitext if there are none), ``pile`` (AutoAWQ's recipe, see
+    ``pile_batches``) or ``wikitext``."""
+    if source == "pile":
+        return pile_batches(tokenizer, n_samples, seq_len)
     texts: list[str] = []
     if source == "baseline_chains" and results_dir is not None:
         run = Path(results_dir) / model_key / "base" / "none"
@@ -120,13 +149,18 @@ def build_checkpoint(model_cfg: ModelConfig, setting: Setting, out_root: Path, r
         # AWQ uses AutoAWQ's calibration size (128 x 512 tokens) unless the setting says otherwise
         n_samples = spec.get("calib_samples", 128 if spec["method"] == "awq" else c.get("n_samples", 128))
         seq_len = spec.get("calib_seq_len", 512 if spec["method"] == "awq" else c.get("seq_len", 2048))
-        calib = calibration_batches(tok, model_cfg.key, results_dir, n_samples, seq_len, c.get("source", "baseline_chains"))
+        # a setting may name its own calibration text (`calib: pile | baseline_chains | wikitext`)
+        source = spec.pop("calib", None) or c.get("source", "baseline_chains")
+        calib = calibration_batches(tok, model_cfg.key, results_dir, n_samples, seq_len, source)
+        spec_log = {**spec, "calib": source}
+    else:
+        spec_log = spec
     stats = compress_model(model, spec, calib)
     log.info("compressed %s/%s: %s", model_cfg.key, setting.name, stats)
     out.mkdir(parents=True, exist_ok=True)
     model.to(save_dtype).save_pretrained(out, safe_serialization=True)
     tok.save_pretrained(out)
-    (out / "compress_stats.json").write_text(json.dumps({"setting": setting.name, **spec, **stats}, indent=2))
+    (out / "compress_stats.json").write_text(json.dumps({"setting": setting.name, **spec_log, **stats}, indent=2))
     (out / "DONE").touch()
     del model
     if device == "cuda":

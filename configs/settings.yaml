@@ -14,9 +14,12 @@ settings:
   - {name: rtn-w4-pc,     family: wquant-pc,   severity: 1, backend: vllm, weight: {method: rtn, bits: 4, group_size: -1}}
   - {name: rtn-w3-pc,     family: wquant-pc,   severity: 2, backend: vllm, weight: {method: rtn, bits: 3, group_size: -1}}
   # AWQ (compress/awq.py): activation-aware scales and clipping before the same rounding. Lotfi et al.
-  # used AWQ W3; these make the comparison like-for-like. Calibrated on 128 x 512 tokens of base chains.
-  - {name: awq-w4-g128,   family: wquant-awq,  severity: 1, backend: vllm, weight: {method: awq, bits: 4, group_size: 128}}
-  - {name: awq-w3-g128,   family: wquant-awq,  severity: 2, backend: vllm, weight: {method: awq, bits: 3, group_size: 128}}
+  # used AWQ W3 calibrated on Pile general text (AutoAWQ's recipe, 128 x 512 tokens), so the main AWQ
+  # settings do the same (decided 2026-11-26). awq-w3-g128-ind calibrates on the full-size model's own
+  # reasoning chains instead, to show how much the calibration text matters.
+  - {name: awq-w4-g128,     family: wquant-awq,     severity: 1, backend: vllm, weight: {method: awq, bits: 4, group_size: 128, calib: pile}}
+  - {name: awq-w3-g128,     family: wquant-awq,     severity: 2, backend: vllm, weight: {method: awq, bits: 3, group_size: 128, calib: pile}}
+  - {name: awq-w3-g128-ind, family: wquant-awq-ind, severity: 2, backend: vllm, weight: {method: awq, bits: 3, group_size: 128, calib: baseline_chains}}
 
   # Unstructured pruning (Wanda: |W| * ||X||, per output row)
   - {name: wanda-10,      family: wanda, severity: 0.1, backend: vllm, weight: {method: wanda, sparsity: 0.1}}

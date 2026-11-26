@@ -11,6 +11,8 @@ rounding ~5x (activation outliers ~17k vs ~1.5k). No code bug; no fp16 overflow.
 2026-11-25, R1, 4 held-out chains (from the end of the file), CPU:
   rtn-w4 KL 0.038 top-1 92.5% | awq-w4 KL 0.026 top-1 93.9%
   rtn-w3 KL 0.226 top-1 82.6% | awq-w3 KL 0.113 top-1 87.9%   (AWQ halves the W3 drift)
+  2026-11-26, calibration text: awq-w3 on Pile (as Lotfi) KL 0.121 top-1 88.0% nll 0.651;
+  on R1's own chains (awq-w3-g128-ind) KL 0.113 top-1 87.9% nll 0.643. The text barely matters.
 """
 import json, sys, time
 from collections import defaultdict
@@ -102,7 +104,9 @@ for key in only:
         calib = None
         if spec["method"] in NEEDS_CALIBRATION:
             calib = calibration_batches(tok, key, Path("results"), spec.get("calib_samples", 128),
-                                        spec.get("calib_seq_len", 512 if spec["method"] == "awq" else 2048))
+                                        spec.get("calib_seq_len", 512 if spec["method"] == "awq" else 2048),
+                                        spec.get("calib", "baseline_chains"))
+            spec = {k: v for k, v in spec.items() if k != "calib"}
         t1 = time.time()
         info = compress_model(model, spec, calib)
         print(f"   compressed in {time.time()-t1:.0f}s: " + ", ".join(f"{k} {v:.3f}" for k, v in info.items() if k.startswith("awq")), flush=True)

@@ -165,25 +165,30 @@ Create `configs/scale-7b.yaml`:
 
 ```yaml
 groups:
-  # session 1: full size first: the compressed versions are calibrated on base's own chains
+  # session 1: full size first; then the versions that need no calibration text from base
   - name: r1-7b-base
     models: [r1-7b]
-    settings: [base, rtn-w4-g128, rtn-w3-g128]
+    settings: [base, awq-w3-g128, rtn-w3-g128, awq-w4-g128, rtn-w4-g128]
     fix: none
-  # session 2, only after session 1 is pulled and committed (AWQ / Wanda calibrate on base chains)
+  # session 2, only after session 1 is pulled and committed (Wanda calibrates on base's chains)
   - name: r1-7b-calibrated
     models: [r1-7b]
-    settings: [awq-w3-g128, awq-w4-g128, wanda-50]
+    settings: [wanda-50]
     fix: none
 ```
 
-- **Order matters:** AWQ and Wanda read calibration text from the base run's saved chains (see
-  `calibration` in `configs/settings.yaml` and `build_checkpoint`). If base isn't in the
-  uploaded results yet, calibration falls back to generic text, and the runs aren't comparable
-  with the 1.5B ones. So:
-  1. run session 1;
-  2. pull, score and commit;
-  3. then push session 2.
+- **Calibration text:**
+  - **AWQ** (`awq-w3/w4-g128`) calibrates on Pile general text from the committed
+    `data/calib/pile_val_pool.jsonl`. That is AutoAWQ's recipe, the same as Lotfi et al., so it
+    can run in session 1.
+  - **Wanda** reads calibration text from the base run's saved chains (`calibration` in
+    `configs/settings.yaml`, `build_checkpoint`). If base isn't in the uploaded results yet, it
+    silently falls back to wikitext, and the run isn't comparable with the 1.5B ones. So:
+    1. run session 1;
+    2. pull, score and commit;
+    3. then push session 2.
+  - **Optional:** `awq-w3-g128-ind` (AWQ calibrated on base's chains) is the 1.5B comparison of
+    calibration text. Add it to session 2 only if quota is left.
 - **Timing:** use the smoke run's tokens/s to plan `HOURS`. Expect about 2.5–4 h per setting
   for 360 problems at an 8,192-token limit. A TP=2 job uses both GPUs, so jobs run one after
   another. Kaggle kills a session at 12 h, so keep `HOURS + POST_HOURS ≤ 11`. Unfinished runs

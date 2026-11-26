@@ -148,6 +148,10 @@ The report writes:
 - **Wanda calibration.** Activation norms come from one pass through the dense model, not
   Wanda's layer-by-layer pass. Calibration text is the baseline's own reasoning chains,
   falling back to wikitext.
+- **AWQ calibration.** `awq-w3/w4-g128` follow AutoAWQ's recipe on Pile validation text, as
+  Lotfi et al. did: the first 128 documents under 512 tokens, joined and cut into 512-token
+  blocks. The text pool is `data/calib/pile_val_pool.jsonl`, built once by
+  `scripts/make_pile_calib.py`. `awq-w3-g128-ind` calibrates on the baseline's chains instead.
 - **KV-cache settings.** These run on the HF backend with KIVI-style fake-quantized K/V.
   Keys are quantized per channel over blocks of 32 tokens, values per token in groups of 32
   channels, and the newest 128 tokens stay in full precision. They are compared with

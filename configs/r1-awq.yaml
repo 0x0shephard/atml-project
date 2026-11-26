@@ -1,23 +1,25 @@
-# AWQ on R1 (planned 2026-11-25, for after the 28 Nov quota reset). Lotfi et al. saw the "had the
-# answer, then dropped it" share of errors rise from 26% to 52% under AWQ W3; our plain-rounding W3
-# stayed flat (~25%, even at 32k). These runs use the same method they did, so the two results can
-# be compared like-for-like. compress/awq.py builds the checkpoint at the start of each job (a few
-# minutes on a T4, calibrated on 128 x 512 tokens of R1's own base chains).
+# AWQ on R1 (planned 2026-11-25, updated 2026-11-26), for after the 28 Nov quota reset. Lotfi et al.
+# saw the "had the answer, then dropped it" share of errors rise from 26% to 52% under AWQ W3; our
+# plain-rounding W3 stayed flat (~24%, even at 32k), as did their own GPTQ W3 (~27%). These runs use
+# their method and their calibration text, so the two results compare like-for-like:
+#   awq-w3-g128 / awq-w4-g128  calibrated on Pile general text (AutoAWQ's recipe, as Lotfi et al.)
+#   awq-w3-g128-ind            calibrated on R1's own reasoning chains (how much does the text matter?)
+# compress/awq.py builds each checkpoint at the start of its job (a few minutes on a T4).
 #
-# Session 1 (HOURS ~4, both GPUs): the two 8k main runs, each ~2-3 h, then the forced-answer step
-#   for both (POST_HOURS 1.2).
-# Session 2: the 32k extend of AWQ W3's cut-off chains on MATH-500, run only after session 1 is
-#   pulled, since it continues those chains. W4 is extended too if the W3 extend leaves time.
+# Session 1 (HOURS ~5, both GPUs): the three 8k main runs, each ~2-3 h, then the forced-answer step
+#   (POST_HOURS 1.2).
+# Session 2: the 32k extend of the cut-off chains on MATH-500, only after session 1 is pulled, since it
+#   continues those chains. W3 (both calibrations) first, W4 if time is left.
 groups:
   - name: r1-awq-main
     models: [r1-1.5b]
-    settings: [awq-w3-g128, awq-w4-g128]
+    settings: [awq-w3-g128, awq-w3-g128-ind, awq-w4-g128]
     fix: none
 
   - name: r1-awq-extend
     kind: extend
     models: [r1-1.5b]
-    settings: [awq-w3-g128, awq-w4-g128]
+    settings: [awq-w3-g128, awq-w3-g128-ind, awq-w4-g128]
     max_tokens: 32768
     problems: problems_math500.jsonl
     results: results-32k-ext

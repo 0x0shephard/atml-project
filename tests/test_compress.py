@@ -149,3 +149,33 @@ def test_compress_model_awq(tiny):
     stats = compress_model(tiny, {"method": "awq", "bits": 4, "group_size": 32, "n_tokens": 64}, calib)
     assert stats["n_linear"] == 14 and "awq_mean_alpha" in stats and stats["mean_rel_frob_error"] > 0
     assert torch.equal(tiny.lm_head.weight, head)
+
+
+def test_pile_batches_follow_autoawq(tmp_path):
+    """Pile calibration: first n documents that fit in seq_len tokens, joined, cut into blocks."""
+    import json
+
+    from transformers import AutoTokenizer
+
+    from crs.compress.apply import PILE_POOL, pile_batches
+
+    tok = AutoTokenizer.from_pretrained("deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B")
+    pool = tmp_path / "pool.jsonl"
+    docs = ["short text " * 5, "x " * 900, "another short one " * 10, "more words here " * 20]
+    pool.write_text("".join(json.dumps({"text": d}) + "\n" for d in docs))
+    blocks = pile_batches(tok, n_samples=3, seq_len=64, pool=pool)
+    kept = [d for d in docs if len(tok(d, add_special_tokens=False).input_ids) <= 64][:3]
+    total = sum(len(tok(d, add_special_tokens=False).input_ids) for d in kept)
+    assert len(blocks) == total // 64 and all(b.shape == (1, 64) for b in blocks)
+    # the committed pool gives a real AutoAWQ-sized calibration set
+    real = pile_batches(tok, n_samples=128, seq_len=512)
+    assert PILE_POOL.exists() and 20 <= len(real) <= 128
+
+
+def test_awq_settings_name_their_calibration():
+    from crs import config
+
+    st = config.settings()
+    assert st["awq-w3-g128"].weight["calib"] == "pile"
+    assert st["awq-w4-g128"].weight["calib"] == "pile"
+    assert st["awq-w3-g128-ind"].weight["calib"] == "baseline_chains"

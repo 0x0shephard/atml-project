@@ -16,7 +16,7 @@ the same commit as the results it describes. Rules are at the bottom.
   (late January) is possible only if the scale-up in W2 finishes by early January.
 - **Team plan and briefs for each member:** [docs/TEAM_PLAN.md](docs/TEAM_PLAN.md).
 
-_Last updated: 2026-11-26 (Lead): added the Lotfi definition check._
+_Last updated: 2026-11-26 (Lead): Lotfi definition check; offline stopping-rule estimate; Pile AWQ._
 
 ## Status at a glance
 
@@ -64,11 +64,28 @@ Each finding cites the run folders it comes from.
    - 50% pruned: −41 points.
    - The RTN code has no bug. Qwen3's activation outliers are 5–10× larger, so the same weight
      error moves it about 5× further (KL 0.13 against 0.03 at W4).
-6. **The method checks hold up.**
+6. **A fixed thinking budget beats our first stopping rule** (offline, 26 Nov;
+   `scripts/stop_rule_offline.py`).
+   - **The rule:** stop when the same answer has been boxed or stated ("the answer is") twice,
+     and take that value.
+   - **Result:** it keeps free-run accuracy with 5–30% fewer tokens, but it beats the free run
+     only where looping is heavy: Qwen3 wanda-50 +13 points, Qwen3 W4 +2.5, R1 asvd-r95 +2.5.
+     Counting So/Therefore conclusions too fires far too early (R1 base 68% → 37% at k=2).
+   - **Cutting the thinking at 4,096 tokens and forcing an answer does better on almost every
+     model** (R1: +2 to +5 points; Qwen3 W4: +15) and uses fewer tokens.
+   - The 4k budget was picked after seeing the 5 budgets, so it needs a held-out check.
+   - **Lotfi's word penalty has not been run by us yet** (T13), so there is no head-to-head.
+     Any fix we propose must beat the 4k budget, not just the free run.
+7. **The method checks hold up.**
    - The answer detector is about 80% precise after its fix; two blind labellers agreed 42/42.
    - Continuing cut-off chains to 32k matches fresh 32k runs.
    - KV-int4 is within 1 point of base.
    - AWQ halves R1's 3-bit drift from full size compared with RTN (KL 0.113 against 0.226).
+   - **Calibration text barely matters:** AWQ W3 on Pile (as Lotfi) gives KL 0.121 and 88.0%
+     top-1 agreement, against 0.113 and 87.9% on R1's own chains (26 Nov, CPU,
+     `scripts/rtn_drift_check.py`).
+   - So Pile calibration alone is unlikely to explain why their AWQ W3 is so damaged (47.0%
+     right, 23.4K-token answers). The live runs (T01) will show it.
 
 ## How Lotfi et al. count the 52%
 
@@ -129,8 +146,8 @@ inflated for short answers like "2"; it is an upper bound on a lenient judge.
 3. **Working hypothesis:** the overthinking share tracks how far a model runs on or loops, not
    quantization as such. Our pruning and low-rank runs, which run long, also show 38–48%.
 4. **Remaining differences to close for T01:**
-   - AWQ calibration: theirs is Pile general text, ours is in-domain chains. This matters: Pile
-     calibration probably damages the model more.
+   - AWQ calibration: theirs is Pile general text. **Done 26 Nov:** our main AWQ settings now use
+     Pile too, and `awq-w3-g128-ind` keeps in-domain chains for comparison.
    - The GPT-5 judge against our rule.
    - 200 against 500 MATH-500 problems.
    - BF16 against our fp16.
@@ -186,8 +203,8 @@ Kaggle T4×2 session hours. Status: `todo` / `running` / `done` / `blocked`.
 
 | ID | Task | Owner | Pri | GPU-h | Status | Output folder |
 |---|---|---|---|---|---|---|
-| T01 | R1 AWQ W3/W4 main runs + forced answers (`r1-awq.yaml r1-awq-main`) | Lead | P0 | 5 | todo (after 28 Nov reset) | `results/r1-1.5b/awq-*` |
-| T02 | R1 AWQ 32k extend on MATH-500 (`r1-awq-extend`) | Lead | P0 | 5 | blocked on T01 | `results-32k-ext/r1-1.5b/awq-*` |
+| T01 | R1 AWQ main runs + forced answers (`r1-awq.yaml r1-awq-main`): W3 and W4 on Pile (as Lotfi), W3 on in-domain chains | Lead | P0 | 6 | todo (after 28 Nov reset) | `results/r1-1.5b/awq-*` |
+| T02 | R1 AWQ 32k extend on MATH-500 (`r1-awq-extend`), all three AWQ versions | Lead | P0 | 6 | blocked on T01 | `results-32k-ext/r1-1.5b/awq-*` |
 | T03 | 2-GPU (tensor-parallel) support for 7–8B models | A | P0 | 1 (test) | todo | code |
 | T04 | R1-Distill-Qwen-7B: base, rtn-w4, rtn-w3, awq-w4, awq-w3, wanda-50 + forced answers | A | P0 | ~20 | blocked on T03 | `results/r1-7b/*` |
 | T05 | Qwen3-8B: same settings as T04 | A | P1 | ~20 | blocked on T03 | `results/qwen3-8b/*` |
@@ -200,7 +217,7 @@ Kaggle T4×2 session hours. Status: `todo` / `running` / `done` / `blocked`.
 | T12 | LLM judge over all runs on Kaggle (`crs.run judge`) | B | P1 | 2 | todo | `outcome_judged` |
 | T13 | Lotfi's word penalty (pen-hand) on R1: base, rtn-w3, awq-w3, wanda-50, asvd-r95 | Lead | P0 | 8 | todo | `results/r1-1.5b/*/pen-hand` |
 | T14 | Penalty controls: pen-mined, pen-random, pen-entropy on R1 rtn-w3 + base | B | P1 | 8 | blocked on T13 | `results/r1-1.5b/*/pen-*` |
-| T15 | Our fix: answer-stability early stop. First offline on saved chains, then live | Lead | P0 | 0 → 6 | todo | `reports/early_stop*` |
+| T15 | Our fix: answer-stability early stop. Offline v1 done: no better than a 4k budget. Next: a better rule (e.g. stop on loops or low entropy) vs the budget, held out | Lead | P0 | 0 → 6 | in progress | `scripts/stop_rule_offline.py` |
 | T16 | Bootstrap CIs and paired tests in every report table (`ledger_table.py` is a start) | Lead | P1 | 0 | partly done | `reports/` |
 | T17 | Paper outline, figure 1 (outcome mix by method), related-work list | Lead | P0 | 0 | todo | `paper/` |
 
@@ -223,6 +240,7 @@ One line per Kaggle session or local check. Newest at the bottom.
 | 2026-11-25 | Lead / jonraza15 | qwen3-finish.yaml | 4.0 | Qwen3 W4 and wanda-50 complete; wanda-30 273/360 | e5c26a2 |
 | 2026-11-25 | Lead / local CPU | rtn_drift_check.py | 0 | no RTN bug; Qwen3 amplifies error ~5× | 118e1fb |
 | 2026-11-25 | Lead / local CPU | rtn_drift_check.py (AWQ) | 0 | AWQ halves W3 drift on R1 | f60c19e |
+| 2026-11-26 | Lead / local CPU | stop_rule_offline.py, lotfi_definition.py, rtn_drift_check.py (Pile vs in-domain AWQ) | 0 | stop rule v1 ≤ 4k budget; Lotfi definition matches; Pile ≈ in-domain AWQ | this commit |
 
 **Kaggle quota** (30 GPU-h per account per week; resets Friday 05:00 PKT): jonraza15 0.78 h and
 sarfrazahmads 0.95 h left until Fri 28 Nov.
@@ -240,6 +258,7 @@ sarfrazahmads 0.95 h left until Fri 28 Nov.
 | 2026-11-25 | Qwen3 W3 RTN dropped from fix runs | Broken (0.8%) |
 | 2026-11-25 | Add AWQ (AutoAWQ defaults, in-domain calibration) | Like-for-like with Lotfi. **Limitation:** they probably calibrated on general text |
 | 2026-11-26 | Target NeurIPS 2027; scale to 7–8B; 4 samples for key settings | Reviewer must-haves: scale, variance, same method as Lotfi |
+| 2026-11-26 | `awq-w3/w4-g128` now calibrate on Pile general text (AutoAWQ's recipe, as Lotfi et al.); `awq-w3-g128-ind` keeps the in-domain chains | Like-for-like with Lotfi; the pair shows how much calibration text matters. No AWQ runs existed yet, so nothing is invalidated |
 
 ## Rules
 
