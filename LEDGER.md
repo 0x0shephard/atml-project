@@ -16,7 +16,7 @@ the same commit as the results it describes. Rules are at the bottom.
   (late January) is possible only if the scale-up in W2 finishes by early January.
 - **Team plan and briefs for each member:** [docs/TEAM_PLAN.md](docs/TEAM_PLAN.md).
 
-_Last updated: 2026-11-26 (Lead)._
+_Last updated: 2026-11-26 (Lead): added the Lotfi definition check._
 
 ## Status at a glance
 
@@ -51,6 +51,10 @@ Each finding cites the run folders it comes from.
    - RTN W3: 18% at 8k and 24% at 32k, against their 52%.
    - It does rise for pruning and low rank: wanda-50 is 38% at 32k, asvd-r95 38% at 8k.
    - The AWQ test (W3) decides whether the method explains the gap.
+   - **Their own paper agrees with us outside AWQ.** Under GPTQ 3-bit the share is about 27%
+     (39 of about 142 errors), the same as full size. Their 52% is AWQ 3-bit alone: their most
+     damaged model, at 47.0% right with 23.4K-token answers. See "How Lotfi et al. count the
+     52%" below.
 4. **Longer limits help but don't cure it.**
    - At 32k, R1 3-bit reaches 55%, yet 22.5% are still cut off and many loop verbatim.
    - At 32k, 4-bit reaches 80%, close to base's 82.5%. (`results-32k-ext/`)
@@ -65,6 +69,71 @@ Each finding cites the run folders it comes from.
    - Continuing cut-off chains to 32k matches fresh 32k runs.
    - KV-int4 is within 1 point of base.
    - AWQ halves R1's 3-bit drift from full size compared with RTN (KL 0.113 against 0.226).
+
+## How Lotfi et al. count the 52%
+
+Checked on 2026-11-26 against arXiv 2606.00206v1, Sections 3, 4.2, 5.3 and A.1–A.3.
+
+**Their definition**
+- **What counts:** "Overthinking" is when the model "reaches the correct solution at some
+  point in its chain of thought but does not commit to it as the final answer".
+- **Denominator:** **all wrong answers** on MATH-500 (500 problems). Every error gets exactly
+  one category: overthinking, logical, arithmetic, or formatting/other.
+- **The two numbers:**
+  - Full size (BF16): 19 of 72 errors = 26%.
+  - AWQ 3-bit: 139 of 265 errors = **52%**.
+  - Model: R1-Distill-Qwen-1.5B.
+- **Detection:** a GPT-5 judge, with its prompt tuned to over 95% agreement with human labels
+  on a hand-annotated subset. Prompt in Appendix D.
+- **Not stated:**
+  - the length limit (their AWQ W3 answers average 23.4K tokens, so it is at least 32K);
+  - how cut-off chains are handled;
+  - samples per problem;
+  - whether quantization runs on real low-bit kernels.
+- **Settings:**
+  - temperature 0.6, top-p 0.95, the same boxed-answer prompt as ours;
+  - weight-only, group size 128;
+  - **AWQ calibrated on Pile (general text), 128 × 512 tokens**;
+  - GPTQ on NuminaMath reasoning traces.
+
+**Their other configurations** (R1-1.5B, MATH-500)
+
+| Version | Right | Overthinking / errors | Share | Mean length |
+|---|---|---|---|---|
+| BF16 | 85.6% | 19 / 72 | 26% | 5.2K |
+| GPTQ W3 | 71.6% | 39 / ~142 | **~27%** | 6.8K |
+| FlatQuant W4A4KV4 | 66.4% | 64 / 168 | 38% | 8.0K |
+| AWQ W3 | 47.0% | 139 / 265 | **52%** | 23.4K |
+
+**Ours, counted the same way** (R1-1.5B; MATH-500 is 200 of their 500; denominator = all wrong
+answers, cut-off chains included; `scripts/lotfi_definition.py`)
+
+| Limit | Version | Right | Errors (cut off) | Strict | Loose (ours) | Any mention* |
+|---|---|---|---|---|---|---|
+| 32k | base | 82.5% | 35 (3) | 0% | **26%** | 49% |
+| 32k | rtn-w4 | 80.0% | 40 (12) | 10% | 32% | 45% |
+| 32k | rtn-w3 | 55.0% | 90 (45) | 9% | **24%** | 34% |
+| 32k | wanda-50 | 61.5% | 77 (42) | 10% | 38% | 40% |
+| 8k | asvd-r95 | 59.0% | 82 (77) | 10% | 48% | 45% |
+
+\*"Any mention" = the gold answer string appears anywhere in the reasoning. This is crude and
+inflated for short answers like "2"; it is an upper bound on a lenient judge.
+
+**What this means**
+1. **Same definition, same baseline.** At 32k our full-size share is 26%, exactly theirs. The
+   gap under RTN W3 is not a counting difference: W3 is at or below base under all three
+   detector strictnesses.
+2. **The 52% is specific to AWQ W3.** In their own data GPTQ W3 stays at about 27%. AWQ W3 is
+   also their most damaged model: 47.0% right against our RTN W3's 55%, and answers 4.5×
+   longer than base.
+3. **Working hypothesis:** the overthinking share tracks how far a model runs on or loops, not
+   quantization as such. Our pruning and low-rank runs, which run long, also show 38–48%.
+4. **Remaining differences to close for T01:**
+   - AWQ calibration: theirs is Pile general text, ours is in-domain chains. This matters: Pile
+     calibration probably damages the model more.
+   - The GPT-5 judge against our rule.
+   - 200 against 500 MATH-500 problems.
+   - BF16 against our fp16.
 
 ## Results snapshot
 
