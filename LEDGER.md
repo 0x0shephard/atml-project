@@ -16,7 +16,7 @@ the same commit as the results it describes. Rules are at the bottom.
   (late January) is possible only if the scale-up in W2 finishes by early January.
 - **Team plan and briefs for each member:** [docs/TEAM_PLAN.md](docs/TEAM_PLAN.md).
 
-_Last updated: 2026-11-26 (Lead): Lotfi definition check; offline stopping-rule estimate; Pile AWQ._
+_Last updated: 2026-11-27 (Lead): offline loop-stop estimate (T15 v2)._
 
 ## Status at a glance
 
@@ -74,8 +74,24 @@ Each finding cites the run folders it comes from.
    - **Cutting the thinking at 4,096 tokens and forcing an answer does better on almost every
      model** (R1: +2 to +5 points; Qwen3 W4: +15) and uses fewer tokens.
    - The 4k budget was picked after seeing the 5 budgets, so it needs a held-out check.
+   - **A loop-triggered stop adds nothing on top of a budget** (offline, 27 Nov;
+     `scripts/loop_stop_offline.py`). The rule: when the thinking repeats itself (a 32-token
+     stretch written 3 times, or the live 64x8 rule), cut it there and force an answer.
+     - **On its own it beats the free run where loops are common:** R1 asvd-r95 33% → 48%, R1 W3
+       44% → 47%, Qwen3 W4 56% → 59%, R1 wanda-50 53% → 56%, with 5–25% fewer tokens.
+     - **Added to a 4k or 8k cap it changes accuracy by −0.1 points** pooled over 2,618 chains
+       (95% CI −0.3 to +0.1), and saves only 0.1–0.5K tokens per chain.
+     - **Why: loops start late.** The median onset is about 4–5K tokens, and half to three
+       quarters start after 4K, so the 4k cap cuts them before they are detected.
+     - The answer at the loop point is estimated by the forced answer at the last budget before
+       it, which lags the loop by up to one budget step.
+   - **Forcing the answer matters more than cutting early.** A cap at the 8k limit with a forced
+     answer is as accurate as one at 4k: R1 base 71.9 vs 70.3; R1 W3 49.2 vs 49.4; Qwen3 W4 68.9
+     vs 67.5. The 4k cap only costs about 30% fewer tokens, so the 4k result is not a lucky pick.
+   - **Practical point:** when the live loop stop (64x8) fires, it should force an answer instead
+     of scoring the chain as cut off. That alone lifts R1 asvd-r95 from 33% to 48%.
    - **Lotfi's word penalty has not been run by us yet** (T13), so there is no head-to-head.
-     Any fix we propose must beat the 4k budget, not just the free run.
+     Any fix we propose must beat a budget with a forced answer, not just the free run.
 7. **The method checks hold up.**
    - The answer detector is about 80% precise after its fix; two blind labellers agreed 42/42.
    - Continuing cut-off chains to 32k matches fresh 32k runs.
@@ -217,7 +233,7 @@ Kaggle T4×2 session hours. Status: `todo` / `running` / `done` / `blocked`.
 | T12 | LLM judge over all runs on Kaggle (`crs.run judge`) | B | P1 | 2 | todo | `outcome_judged` |
 | T13 | Lotfi's word penalty (pen-hand) on R1: base, rtn-w3, awq-w3, wanda-50, asvd-r95 | Lead | P0 | 8 | todo | `results/r1-1.5b/*/pen-hand` |
 | T14 | Penalty controls: pen-mined, pen-random, pen-entropy on R1 rtn-w3 + base | B | P1 | 8 | blocked on T13 | `results/r1-1.5b/*/pen-*` |
-| T15 | Our fix: answer-stability early stop. Offline v1 done: no better than a 4k budget. Next: a better rule (e.g. stop on loops or low entropy) vs the budget, held out | Lead | P0 | 0 → 6 | in progress | `scripts/stop_rule_offline.py` |
+| T15 | Our fix: early stop. Offline v1 (repeated answer) and v2 (loop stop) are done: neither beats a 4k budget with a forced answer, because loops start too late to matter under a cap. Next: decide whether the fix is simply "budget + forced answer", or try an earlier signal (entropy) | Lead | P0 | 0 → 6 | in progress | `scripts/stop_rule_offline.py`, `scripts/loop_stop_offline.py` |
 | T16 | Bootstrap CIs and paired tests in every report table (`ledger_table.py` is a start) | Lead | P1 | 0 | partly done | `reports/` |
 | T17 | Paper outline, figure 1 (outcome mix by method), related-work list | Lead | P0 | 0 | todo | `paper/` |
 
@@ -240,7 +256,8 @@ One line per Kaggle session or local check. Newest at the bottom.
 | 2026-11-25 | Lead / jonraza15 | qwen3-finish.yaml | 4.0 | Qwen3 W4 and wanda-50 complete; wanda-30 273/360 | e5c26a2 |
 | 2026-11-25 | Lead / local CPU | rtn_drift_check.py | 0 | no RTN bug; Qwen3 amplifies error ~5× | 118e1fb |
 | 2026-11-25 | Lead / local CPU | rtn_drift_check.py (AWQ) | 0 | AWQ halves W3 drift on R1 | f60c19e |
-| 2026-11-26 | Lead / local CPU | stop_rule_offline.py, lotfi_definition.py, rtn_drift_check.py (Pile vs in-domain AWQ) | 0 | stop rule v1 ≤ 4k budget; Lotfi definition matches; Pile ≈ in-domain AWQ | this commit |
+| 2026-11-26 | Lead / local CPU | stop_rule_offline.py, lotfi_definition.py, rtn_drift_check.py (Pile vs in-domain AWQ) | 0 | stop rule v1 ≤ 4k budget; Lotfi definition matches; Pile ≈ in-domain AWQ | 7d4fb5e |
+| 2026-11-27 | Lead / local CPU | loop_stop_offline.py | 0 | loop stop beats the free run; adds −0.1 pts on top of a 4k/8k cap | this commit |
 
 **Kaggle quota** (30 GPU-h per account per week; resets Friday 05:00 PKT): jonraza15 0.78 h and
 sarfrazahmads 0.95 h left until Fri 28 Nov.
